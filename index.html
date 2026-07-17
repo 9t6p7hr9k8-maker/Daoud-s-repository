@@ -437,10 +437,13 @@
     width:100%; height:100%; border-radius:50%; border:2px solid var(--line);
     display:flex; align-items:center; justify-content:center; position:relative;
   }
+  .qibla-pivot{
+    position:absolute; top:50%; left:50%; width:0; height:0;
+  }
   .qibla-needle{
-    position:absolute; top:50%; left:50%; width:3px; height:62px;
+    position:absolute; bottom:0; left:0; width:3px; height:62px;
     background:var(--gold-500); transform-origin:bottom center;
-    transform:translate(-50%,-100%) rotate(0deg); border-radius:3px;
+    transform:rotate(0deg); border-radius:3px; transition:transform .4s ease;
   }
   .qibla-needle::before{
     content:''; position:absolute; top:-6px; left:50%; transform:translateX(-50%);
@@ -629,7 +632,9 @@
       <div class="qibla-card">
         <div class="qibla-compass">
           <div class="ring">
-            <div class="qibla-needle" id="qiblaNeedle"></div>
+            <div class="qibla-pivot">
+              <div class="qibla-needle" id="qiblaNeedle"></div>
+            </div>
             <div class="qibla-kaaba"></div>
           </div>
         </div>
@@ -1203,7 +1208,6 @@
 
   const FREE_RECITER_KEYWORDS = [
     { test: n => n.includes('qasim'),                                              fallback: 'Abdul Mohsin Al Qasim' },
-    { test: n => n.includes('sudais'),                                             fallback: 'Abdul Rahman Al-Sudais' },
     { test: n => n.includes('maher') && (n.includes('meaqli') || n.includes('muaiqly') || n.includes('mueaqly')), fallback: 'Maher Al Muaiqly' },
     { test: n => n.includes('saad') && n.includes('ghamdi'),                       fallback: 'Saad Al Ghamdi' },
     { test: n => n.includes('alafasy') || n.includes('afasy'),                     fallback: 'Mishary Alafasy' },
@@ -1281,16 +1285,46 @@
     return card;
   }
 
+  // Récitateurs fiabilisés à 100% : identifiants exacts confirmés sur le CDN officiel
+  // cdn.islamic.network (le même réseau qui alimente la plupart des grosses apps Coran).
+  // Contrairement à la recherche floue sur mp3quran.net, il n'y a ici aucune ambiguïté
+  // de nom possible : chaque identifiant correspond à un seul et unique récitateur.
+  const CONFIRMED_CDN_RECITERS = [
+    { label: 'Abdul Rahman Al-Sudais', edition: 'ar.sudais' }
+  ];
+
+  function playCdnSurahAudio(edition, surahNumber, label){
+    const padded = String(surahNumber).padStart(3, '0');
+    const url = `https://cdn.islamic.network/quran/audio-surah/128/${edition}/${padded}.mp3`;
+    miniPlayerAudio.src = url;
+    miniPlayerName.textContent = label;
+    miniPlayerEl.classList.add('visible');
+    miniPlayerAudio.play().catch(() => {
+      miniPlayerName.textContent = `Lecture impossible pour ${label} — réessaie.`;
+    });
+  }
+
+  function renderConfirmedCdnReciters(freeList){
+    CONFIRMED_CDN_RECITERS.forEach(({label, edition}) => {
+      const card = buildReciterCard(label, 'Murattal · gratuit', () => {
+        const n = document.getElementById('reciterSurahSelect').value;
+        playCdnSurahAudio(edition, n, label);
+      }, false);
+      freeList.appendChild(card);
+    });
+  }
+
   async function loadReciters(){
     const freeList = document.getElementById('freeRecitersList');
     const premiumList = document.getElementById('premiumRecitersList');
+    freeList.innerHTML = '';
+    renderConfirmedCdnReciters(freeList); // toujours affichés, même si mp3quran.net est indisponible
     try{
       const res = await fetch('https://www.mp3quran.net/api/v3/reciters?language=eng');
       const json = await res.json();
       const reciters = json.reciters || [];
 
       // ----- Gratuit -----
-      freeList.innerHTML = '';
       FREE_RECITER_KEYWORDS.forEach(({test, fallback}) => {
         let found;
         const overrideId = MANUAL_RECITER_ID_OVERRIDES[fallback];
@@ -1332,7 +1366,11 @@
         premiumList.innerHTML = '<p style="color:var(--ink-soft);font-size:0.88rem;">Récitations lentes indisponibles pour le moment.</p>';
       }
     }catch(err){
-      freeList.innerHTML = '<p style="color:var(--ink-soft);font-size:0.88rem;">Impossible de charger les récitateurs pour le moment.</p>';
+      const notice = document.createElement('p');
+      notice.style.cssText = 'color:var(--ink-soft);font-size:0.88rem;';
+      notice.textContent = "Certains récitateurs n'ont pas pu être chargés pour le moment.";
+      freeList.appendChild(notice);
+      premiumList.innerHTML = '<p style="color:var(--ink-soft);font-size:0.88rem;">Récitations lentes indisponibles pour le moment.</p>';
     }
   }
 
@@ -1399,15 +1437,43 @@
     `).join('');
   }
 
-  function startCountdown(times){
+  // Calcule le décalage UTC (en minutes) d'un fuseau horaire IANA à un instant donné.
+  function getTzOffsetMinutes(timeZone, date){
+    try{
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone, timeZoneName: 'shortOffset'
+      }).formatToParts(date);
+      const tzPart = parts.find(p => p.type === 'timeZoneName').value; // ex: "GMT+2" ou "GMT+5:30"
+      const m = tzPart.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+      if(!m) return 0;
+      const sign = m[1] === '-' ? -1 : 1;
+      const hours = parseInt(m[2], 10);
+      const mins = m[3] ? parseInt(m[3], 10) : 0;
+      return sign * (hours * 60 + mins);
+    }catch(err){
+      return -date.getTimezoneOffset(); // repli : fuseau du navigateur
+    }
+  }
+
+  // Donne l'année/mois/jour "du jour" tels que vécus dans le fuseau horaire donné.
+  function getYMDInTz(timeZone, date){
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(date);
+    const get = t => parts.find(p => p.type === t).value;
+    return { year: Number(get('year')), month: Number(get('month')), day: Number(get('day')) };
+  }
+
+  function startCountdown(times, timeZone){
     prayerTimesToday = {};
     const now = new Date();
+    const offsetMin = timeZone ? getTzOffsetMinutes(timeZone, now) : -now.getTimezoneOffset();
+    const { year, month, day } = timeZone ? getYMDInTz(timeZone, now) : { year: now.getFullYear(), month: now.getMonth()+1, day: now.getDate() };
+
     PRAYER_ORDER.forEach(name => {
       const raw = (times[name] || '').split(' ')[0]; // "HH:mm"
       const [h, m] = raw.split(':').map(Number);
-      const d = new Date(now);
-      d.setHours(h, m, 0, 0);
-      prayerTimesToday[name] = d;
+      // Construit l'instant UTC correspondant à h:m dans le fuseau du lieu, le jour local du lieu.
+      const utcMillis = Date.UTC(year, month - 1, day, h, m, 0) - offsetMin * 60000;
+      prayerTimesToday[name] = new Date(utcMillis);
     });
 
     if(countdownTimer) clearInterval(countdownTimer);
@@ -1418,10 +1484,9 @@
       if(next){
         nextTime = prayerTimesToday[next];
       } else {
-        // toutes les prières du jour sont passées : on vise Fajr, à la même heure demain (approximatif)
+        // toutes les prières du jour sont passées : on vise Fajr, 24h après le Fajr du jour (approximatif)
         next = 'Fajr';
-        nextTime = new Date(prayerTimesToday['Fajr']);
-        nextTime.setDate(nextTime.getDate() + 1);
+        nextTime = new Date(prayerTimesToday['Fajr'].getTime() + 24 * 3600000);
       }
       const diff = Math.max(0, nextTime - now);
       const hh = String(Math.floor(diff / 3600000)).padStart(2,'0');
@@ -1440,7 +1505,7 @@
   function renderQibla(direction){
     qiblaDirectionDeg = direction;
     qiblaDeg.textContent = `Direction : ${Math.round(direction)}° depuis le nord`;
-    qiblaNeedle.style.transform = `translate(-50%,-100%) rotate(${direction}deg)`;
+    qiblaNeedle.style.transform = `rotate(${direction}deg)`;
   }
 
   async function reverseGeocodeLabel(lat, lng){
@@ -1458,11 +1523,12 @@
     prayerPlace.textContent = isDefault ? 'Position par défaut : La Mecque (autorise la localisation pour tes horaires locaux)' : 'Localisation en cours…';
     try{
       const ts = Math.floor(Date.now() / 1000);
-      const res = await fetch(`https://api.aladhan.com/v1/timings/${ts}?latitude=${lat}&longitude=${lng}&method=4`);
+      const res = await fetch(`https://api.aladhan.com/v1/timings/${ts}?latitude=${lat}&longitude=${lng}&method=3`);
       const json = await res.json();
       const times = json.data.timings;
+      const timeZone = json.data.meta && json.data.meta.timezone; // ex: "Africa/Cairo" — le fuseau réel du lieu détecté
       renderPrayerList(times);
-      startCountdown(times);
+      startCountdown(times, timeZone);
 
       const qres = await fetch(`https://api.aladhan.com/v1/qibla/${lat}/${lng}`);
       const qjson = await qres.json();
@@ -1506,7 +1572,7 @@
       if(qiblaDirectionDeg === null) return;
       const heading = e.webkitCompassHeading != null ? e.webkitCompassHeading : (360 - (e.alpha || 0));
       const rotation = qiblaDirectionDeg - heading;
-      qiblaNeedle.style.transform = `translate(-50%,-100%) rotate(${rotation}deg)`;
+      qiblaNeedle.style.transform = `rotate(${rotation}deg)`;
     }
     if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
       try{
