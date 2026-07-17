@@ -1224,7 +1224,6 @@
 
   const FREE_RECITER_KEYWORDS = [
     { test: n => n.includes('qasim'),                                              fallback: 'Abdul Mohsin Al Qasim' },
-    { test: n => n.includes('maher') && (n.includes('meaqli') || n.includes('muaiqly') || n.includes('mueaqly')), fallback: 'Maher Al Muaiqly' },
     { test: n => n.includes('saad') && n.includes('ghamdi'),                       fallback: 'Saad Al Ghamdi' },
     { test: n => n.includes('alafasy') || n.includes('afasy'),                     fallback: 'Mishary Alafasy' },
     { test: n => n.includes('shuraim'),                                            fallback: 'Saud Al-Shuraim' },
@@ -1253,6 +1252,7 @@
   }
 
   function playSurahAudio(moshaf, surahNumber, label){
+    miniPlayerAudio.onended = null;
     if(!moshaf){
       miniPlayerName.textContent = `Audio indisponible pour ${label}.`;
       miniPlayerEl.classList.add('visible');
@@ -1310,6 +1310,7 @@
   ];
 
   function playCdnSurahAudio(edition, surahNumber, label){
+    miniPlayerAudio.onended = null;
     const padded = String(surahNumber).padStart(3, '0');
     const url = `https://cdn.islamic.network/quran/audio-surah/128/${edition}/${padded}.mp3`;
     miniPlayerAudio.src = url;
@@ -1330,11 +1331,60 @@
     });
   }
 
+  // Récitateurs fiabilisés via everyayah.com (archive audio de référence utilisée
+  // depuis des années par de nombreuses apps Coran). Le nom de dossier ci-dessous est
+  // vérifié et correspond à un seul récitateur — pas de recherche floue, donc pas de
+  // risque de confusion avec quelqu'un d'autre. Contrairement au CDN par sourate,
+  // everyayah.com sert l'audio verset par verset : on enchaîne automatiquement
+  // les versets à la suite.
+  const EVERYAYAH_CONFIRMED_RECITERS = [
+    { label: 'Maher Al Muaiqly', folder: 'Maher_AlMuaiqly_64kbps' }
+  ];
+
+  function playEveryAyahSurah(folder, surahNumber, label){
+    const surahMeta = SURAHS.find(s => s.number === Number(surahNumber));
+    const totalAyahs = surahMeta ? surahMeta.numberOfAyahs : null;
+    if(!totalAyahs){
+      miniPlayerName.textContent = "Choisis d'abord une sourate.";
+      miniPlayerEl.classList.add('visible');
+      return;
+    }
+    const surahPadded = String(surahNumber).padStart(3, '0');
+    let ayah = 1;
+    function playNext(){
+      if(ayah > totalAyahs){
+        miniPlayerName.textContent = `${label} — fin de la sourate.`;
+        return;
+      }
+      const ayahPadded = String(ayah).padStart(3, '0');
+      miniPlayerAudio.src = `https://everyayah.com/data/${folder}/${surahPadded}${ayahPadded}.mp3`;
+      miniPlayerName.textContent = `${label} — verset ${ayah}/${totalAyahs}`;
+      miniPlayerEl.classList.add('visible');
+      miniPlayerAudio.play().catch(() => {
+        miniPlayerName.textContent = `Lecture impossible pour ${label} — réessaie.`;
+      });
+      ayah++;
+    }
+    miniPlayerAudio.onended = playNext;
+    playNext();
+  }
+
+  function renderConfirmedEveryAyahReciters(freeList){
+    EVERYAYAH_CONFIRMED_RECITERS.forEach(({label, folder}) => {
+      const card = buildReciterCard(label, 'Murattal · gratuit', () => {
+        const n = document.getElementById('reciterSurahSelect').value;
+        playEveryAyahSurah(folder, n, label);
+      }, false);
+      freeList.appendChild(card);
+    });
+  }
+
   async function loadReciters(){
     const freeList = document.getElementById('freeRecitersList');
     const premiumList = document.getElementById('premiumRecitersList');
     freeList.innerHTML = '';
     renderConfirmedCdnReciters(freeList); // toujours affichés, même si mp3quran.net est indisponible
+    renderConfirmedEveryAyahReciters(freeList);
     try{
       const res = await fetch('https://www.mp3quran.net/api/v3/reciters?language=eng');
       const json = await res.json();
