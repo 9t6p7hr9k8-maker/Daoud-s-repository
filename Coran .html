@@ -698,6 +698,23 @@
   // global "supabase" fourni par la librairie chargée dans le <head>.
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  const googleLoginBtn = document.getElementById('googleLoginBtn');
+
+if (googleLoginBtn) {
+    googleLoginBtn.addEventListener('click', async () => {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                // Redirige l'utilisateur vers ton site en ligne après la connexion
+                redirectTo: window.location.origin 
+            }
+        });
+
+        if (error) {
+            alert("Erreur de connexion avec Google : " + error.message);
+        }
+    });
+}
   // ----- Éléments d'UI liés au compte -----
   const loginBtn   = document.getElementById('openLogin');
   const premiumBtn = document.getElementById('premiumBtn');
