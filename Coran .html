@@ -686,6 +686,7 @@
 </div>
 
 <script>
+
   /* =====================================================================
      CONFIG SUPABASE
      Remplace ces deux valeurs par celles de ton projet
@@ -880,6 +881,38 @@ if (googleLoginBtn) {
     entries.forEach(entry => { if(entry.isIntersecting) entry.target.classList.add('visible'); });
   }, {threshold:0.12});
   revealEls.forEach(el => io.observe(el));
+  // Écouter les changements d'état de la connexion avec Supabase
+supabase.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    // L'utilisateur est connecté !
+    console.log("Utilisateur connecté:", session.user);
+    
+    // Ici, on change le comportement des boutons Gratuit / Premium
+    // Par exemple, au lieu d'ouvrir la pop-up de connexion, ils redirigent ou activent la fonction directement
+    configurerBoutonsVersion(true);
+  } else {
+    // L'utilisateur n'est pas connecté
+    configurerBoutonsVersion(false);
+  }
+});
+
+function configurerBoutonsVersion(estConnecte) {
+  const boutonsFaireEssai = document.querySelectorAll('.bouton-version'); // Remplace par la bonne classe de tes boutons
+
+  boutonsFaireEssai.forEach(bouton => {
+    bouton.onclick = function(e) {
+      if (!estConnecte) {
+        e.preventDefault();
+        alert("Veuillez vous connecter d'abord !");
+        // Ici ton code pour ouvrir ta fenêtre de connexion
+      } else {
+        // L'utilisateur est connecté, on le laisse accéder à la version choisie
+        console.log("Accès accordé à la version !");
+        // Ici ton code pour ouvrir la version gratuite ou premium (ex: redirection ou ouverture du contenu)
+      }
+    };
+  });
+}
 </script>
 
 </body>
