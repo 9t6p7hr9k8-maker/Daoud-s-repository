@@ -1194,19 +1194,26 @@
      Gratuit : une large sélection de récitateurs connus.
      Premium : récitations lentes (mujawwad / muallim)
   ===================================================================== */
+  // Si un nom se trompe encore de personne malgré le double critère ci-dessous,
+  // on peut forcer ici l'id exact du récitateur (visible dans l'URL mp3quran.net,
+  // ex. mp3quran.net/eng/maher -> il faut l'id numérique renvoyé par l'API pour "maher").
+  const MANUAL_RECITER_ID_OVERRIDES = {
+    // 'Maher Al Muaiqly': 65,
+  };
+
   const FREE_RECITER_KEYWORDS = [
-    { keys: ['qasim'],                         fallback: 'Abdul Mohsin Al Qasim' },
-    { keys: ['sudais'],                        fallback: 'Abdul Rahman Al-Sudais' },
-    { keys: ['muaiqly', 'moaiqly', 'meaqli'],  fallback: 'Maher Al Muaiqly' },
-    { keys: ['ghamdi', 'ghamadi'],             fallback: 'Saad Al Ghamdi' },
-    { keys: ['alafasy', 'afasy'],              fallback: 'Mishary Alafasy' },
-    { keys: ['shuraim'],                       fallback: 'Saud Al-Shuraim' },
-    { keys: ['ajmi', 'ajmy'],                  fallback: 'Ahmad Al Ajmi' },
-    { keys: ['basfar', 'basfer'],              fallback: 'Abdullah Basfar' },
-    { keys: ['ayyoub', 'ayyub'],               fallback: 'Mohammed Ayyoub' },
-    { keys: ['hudhaify', 'huthaify'],          fallback: 'Ali Al-Hudhaify' },
-    { keys: ['balilah', 'balila'],             fallback: 'Bandar Balilah' },
-    { keys: ['alemadi', 'emadi'],              fallback: 'Anas Alemadi' }
+    { test: n => n.includes('qasim'),                                              fallback: 'Abdul Mohsin Al Qasim' },
+    { test: n => n.includes('sudais'),                                             fallback: 'Abdul Rahman Al-Sudais' },
+    { test: n => n.includes('maher') && (n.includes('meaqli') || n.includes('muaiqly') || n.includes('mueaqly')), fallback: 'Maher Al Muaiqly' },
+    { test: n => n.includes('saad') && n.includes('ghamdi'),                       fallback: 'Saad Al Ghamdi' },
+    { test: n => n.includes('alafasy') || n.includes('afasy'),                     fallback: 'Mishary Alafasy' },
+    { test: n => n.includes('shuraim'),                                            fallback: 'Saud Al-Shuraim' },
+    { test: n => n.includes('ajmi') || n.includes('ajmy'),                         fallback: 'Ahmad Al Ajmi' },
+    { test: n => n.includes('basfar') || n.includes('basfer'),                     fallback: 'Abdullah Basfar' },
+    { test: n => n.includes('ayyoub') || n.includes('ayyub'),                      fallback: 'Mohammed Ayyoub' },
+    { test: n => n.includes('hudhaify') || n.includes('huthaify'),                 fallback: 'Ali Al-Hudhaify' },
+    { test: n => n.includes('balilah') || n.includes('balila'),                    fallback: 'Bandar Balilah' },
+    { test: n => n.includes('anas') && (n.includes('malik') || n.includes('malek') || n.includes('saleh') || n.includes('salih')), fallback: 'Anas Bin Saleh Al-Malik' }
   ];
   let miniPlayerEl, miniPlayerAudio, miniPlayerName;
 
@@ -1284,8 +1291,18 @@
 
       // ----- Gratuit -----
       freeList.innerHTML = '';
-      FREE_RECITER_KEYWORDS.forEach(({keys, fallback}) => {
-        const found = reciters.find(r => keys.some(k => r.name.toLowerCase().includes(k)));
+      FREE_RECITER_KEYWORDS.forEach(({test, fallback}) => {
+        let found;
+        const overrideId = MANUAL_RECITER_ID_OVERRIDES[fallback];
+        if(overrideId){
+          found = reciters.find(r => r.id === overrideId);
+        }
+        if(!found){
+          // parmi toutes les correspondances possibles, on garde le nom le plus court
+          // (généralement le nom "canonique", pas une variante type "- Taraweeh 1445")
+          const matches = reciters.filter(r => test(r.name.toLowerCase()));
+          found = matches.sort((a, b) => a.name.length - b.name.length)[0];
+        }
         if(!found) return; // pas trouvé dans le catalogue actuel : on n'affiche pas une carte cassée
         const label = found.name;
         const moshaf = pickBestMoshaf(found, { wantSlow: false });
@@ -1325,8 +1342,8 @@
   const hadithText = document.getElementById('hadithText');
   const hadithRef = document.getElementById('hadithRef');
   const HADITH_EDITIONS = [
-    { id: 'eng-bukhari', label: 'Sahih Al-Boukhari' },
-    { id: 'eng-muslim',  label: 'Sahih Muslim' }
+    { id: 'fra-bukhari', label: 'Sahih Al-Boukhari' },
+    { id: 'fra-muslim',  label: 'Sahih Mouslim' }
   ];
 
   function seededRandom(seed){
