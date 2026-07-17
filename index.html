@@ -1,13 +1,869 @@
-<h1>Mon premier site déployé avec le Terminal !</h1>
-  <p> Bonjour, ce site est dédié a la vente de fruits et légumes.  </p>
-  
-  <a href ="https://www.youtube.com">Visitez notre site pour plus d'informations</a>
-  <div>
-        <img src="pomme.jpg" alt="Une belle pomme rouge" width="250" style="border-radius: 8px; margin: 10px;">
-        
-        <img src="https://images.unsplash.com/photo-1550258987-190a2d41a8ba" alt="Un ananas" width="250" style="border-radius: 8px; margin: 10px;">
-    <h2 style="margin-bottom: 20px;">Zone Anime : Demon Slayer ⚔️</h2>
-        
-        <div style="display: inline-block; max-width: 350px; width: 100%;">
-            <video width="100%" controls style="border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.3); display: block;">
-                <source src="demon-slayer.mp4" type="video/mp4">
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rihla — Ton accompagnement quotidien pour le Coran</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Work+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Librairie Supabase (elle n'était jamais chargée avant, donc supabase.createClient n'existait pas) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --emerald-950:#0b2e2b;
+    --emerald-800:#0f3d3a;
+    --emerald-600:#1b5a54;
+    --gold-500:#c9a227;
+    --gold-300:#e0c25f;
+    --parchment:#f7f3e8;
+    --sand:#ede4d3;
+    --ink:#1b1b18;
+    --ink-soft:#4a463d;
+    --line: rgba(27,27,24,0.12);
+    --radius: 14px;
+    --shadow: 0 12px 30px -12px rgba(11,46,43,0.25);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--parchment);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Amiri', serif;
+    font-weight:700;
+    letter-spacing:0.2px;
+  }
+  .mono{
+    font-family:'IBM Plex Mono', monospace;
+  }
+  a{color:inherit;}
+  img,svg{display:block;max-width:100%;}
+  button{font-family:inherit;cursor:pointer;}
+
+  :focus-visible{
+    outline:2px solid var(--gold-500);
+    outline-offset:3px;
+    border-radius:4px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+  }
+
+  .skip-link{
+    position:absolute; left:-999px; top:0;
+    background:var(--emerald-950); color:var(--parchment);
+    padding:10px 16px; z-index:200; border-radius:0 0 8px 0;
+  }
+  .skip-link:focus{left:0;}
+
+  /* ---------- Hadith bar ---------- */
+  .hadith-bar{
+    background:var(--emerald-950);
+    color:var(--sand);
+    text-align:center;
+    padding:10px 16px;
+    font-size:0.85rem;
+    line-height:1.5;
+  }
+  .hadith-bar strong{color:var(--gold-300); font-weight:500;}
+
+  /* ---------- Nav ---------- */
+  header.nav{
+    position:sticky; top:0; z-index:100;
+    background:rgba(247,243,232,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:1180px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Amiri', serif; font-weight:700; font-size:1.35rem;
+    color:var(--emerald-950);
+    text-decoration:none;
+  }
+  .logo-mark{width:30px;height:30px;flex-shrink:0;}
+  nav.links{display:flex; gap:28px; font-size:0.95rem;}
+  nav.links a{text-decoration:none; color:var(--ink-soft); transition:color .2s;}
+  nav.links a:hover{color:var(--emerald-950);}
+  .nav-actions{display:flex; align-items:center; gap:12px;}
+  .user-badge{
+  display:none;
+  align-items:center; gap:10px;
+  background:var(--sand); padding:6px 14px 6px 6px; border-radius:999px;
+  font-size:0.85rem; font-weight:500; color:var(--emerald-950);
+}
+.user-badge.visible{display:flex;}
+.user-badge .avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--emerald-950); color:var(--gold-300);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace; font-size:0.75rem; font-weight:600;
+}
+.user-badge .logout{
+  background:none;border:none;color:var(--ink-soft);font-size:0.78rem;text-decoration:underline;margin-left:4px;
+}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:11px 22px;
+    border-radius:999px;
+    border:1px solid transparent;
+    font-size:0.92rem; font-weight:500;
+    text-decoration:none;
+    transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+  }
+  .btn-primary{background:var(--emerald-950); color:var(--parchment);}
+  .btn-primary:hover{background:var(--emerald-800); transform:translateY(-1px); box-shadow:var(--shadow);}
+  .btn-ghost{background:transparent; color:var(--emerald-950); border-color:var(--line);}
+  .btn-ghost:hover{border-color:var(--emerald-950);}
+  .btn-gold{background:var(--gold-500); color:var(--emerald-950);}
+  .btn-gold:hover{background:var(--gold-300); transform:translateY(-1px);}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    max-width:1180px; margin:0 auto;
+    padding:88px 24px 60px;
+    display:grid; grid-template-columns:1.1fr 0.9fr; gap:56px; align-items:center;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'IBM Plex Mono', monospace; font-size:0.75rem; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--emerald-600); margin-bottom:18px;
+  }
+  .eyebrow::before{content:''; width:16px; height:1px; background:var(--gold-500);}
+  .hero h1{
+    font-size:clamp(2.3rem, 4.2vw, 3.6rem);
+    line-height:1.12;
+    color:var(--emerald-950);
+    margin:0 0 22px;
+  }
+  .hero h1 em{color:var(--gold-500); font-style:normal;}
+  .hero p.lead{
+    font-size:1.08rem; color:var(--ink-soft); line-height:1.65; max-width:46ch; margin:0 0 32px;
+  }
+  .hero-cta{display:flex; flex-wrap:wrap; gap:14px; margin-bottom:28px;}
+  .hero-note{font-size:0.85rem; color:var(--ink-soft);}
+
+  .hero-visual{
+    position:relative; aspect-ratio:1/1;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* ---------- Girih signature pattern ---------- */
+  .girih-frame{
+    position:relative; width:100%; height:100%;
+    background:var(--emerald-950);
+    border-radius:24px;
+    overflow:hidden;
+    box-shadow:var(--shadow);
+  }
+  .girih-frame svg{width:100%;height:100%;}
+  .girih-line{
+    fill:none; stroke:var(--gold-500); stroke-width:1.1;
+    stroke-dasharray: 1400;
+    stroke-dashoffset: 1400;
+    animation: draw 2.6s ease forwards .3s;
+  }
+  .girih-line.two{stroke:var(--gold-300); opacity:0.7; animation-delay:.6s;}
+  @keyframes draw{ to{ stroke-dashoffset:0; } }
+  .girih-caption{
+    position:absolute; bottom:22px; left:22px; right:22px;
+    color:var(--sand); font-family:'IBM Plex Mono', monospace; font-size:0.72rem;
+    display:flex; justify-content:space-between; letter-spacing:0.04em;
+  }
+
+  /* ---------- Section shell ---------- */
+  section{max-width:1180px; margin:0 auto; padding:64px 24px;}
+  .section-head{max-width:640px; margin-bottom:44px;}
+  .section-head .eyebrow{margin-bottom:14px;}
+  .section-head h2{font-size:clamp(1.8rem,3vw,2.4rem); color:var(--emerald-950); margin:0 0 14px;}
+  .section-head p{color:var(--ink-soft); line-height:1.6; margin:0;}
+
+  .divider{
+    max-width:1180px; margin:0 auto; padding:0 24px;
+  }
+  .divider svg{width:100%; height:34px; opacity:0.5;}
+
+  /* ---------- Product cards ---------- */
+  .products-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:24px;
+  }
+  .product-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:28px;
+    text-align:left;
+    display:flex; flex-direction:column; gap:16px;
+    transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+    width:100%;
+  }
+  .product-card:hover, .product-card:focus-visible{
+    transform:translateY(-4px);
+    box-shadow:var(--shadow);
+    border-color:transparent;
+  }
+  .product-icon{
+    width:44px; height:44px; border-radius:10px;
+    background:var(--emerald-950);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .product-icon svg{width:22px;height:22px;stroke:var(--gold-300);}
+  .product-card h3{margin:0; font-size:1.2rem; color:var(--emerald-950);}
+  .product-card p{margin:0; color:var(--ink-soft); font-size:0.94rem; line-height:1.55;}
+  .product-card .tag{
+    align-self:flex-start;
+    font-family:'IBM Plex Mono', monospace; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase;
+    color:var(--emerald-600); background:var(--sand); padding:4px 10px; border-radius:999px;
+  }
+  .product-card .expand-hint{
+    margin-top:auto; font-size:0.82rem; color:var(--gold-500); font-weight:500;
+    display:flex; align-items:center; gap:6px;
+  }
+
+  /* ---------- Expandable panel ---------- */
+  .panel{
+    display:none;
+    grid-column:1/-1;
+    background:var(--emerald-950);
+    color:var(--sand);
+    border-radius:var(--radius);
+    padding:32px;
+    margin-top:6px;
+  }
+  .panel.open{display:block;}
+  .panel h4{font-family:'Amiri',serif; color:var(--gold-300); font-size:1.15rem; margin:0 0 12px;}
+  .panel p{color:var(--sand); opacity:0.9; line-height:1.6; margin:0 0 18px; max-width:60ch;}
+
+  /* Auto-reading demo */
+  .reader-demo{
+    background:rgba(247,243,232,0.06);
+    border:1px solid rgba(247,243,232,0.16);
+    border-radius:10px; padding:20px;
+  }
+  .reader-controls{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
+  .play-btn{
+    width:40px; height:40px; border-radius:50%;
+    background:var(--gold-500); border:none; display:flex; align-items:center; justify-content:center;
+  }
+  .play-btn svg{width:16px;height:16px;fill:var(--emerald-950);}
+  .progress-track{flex:1; height:4px; background:rgba(247,243,232,0.2); border-radius:999px; overflow:hidden;}
+  .progress-fill{height:100%; width:0%; background:var(--gold-500); transition:width .3s linear;}
+  .timer{font-family:'IBM Plex Mono', monospace; font-size:0.78rem; opacity:0.8;}
+  .verse-line{
+    font-family:'Amiri', serif; font-size:1.35rem; line-height:2.4; direction:rtl; text-align:right;
+  }
+  .verse-word{padding:2px 3px; border-radius:4px; transition:background .2s, color .2s;}
+  .verse-word.active{background:var(--gold-500); color:var(--emerald-950);}
+
+  /* Listening session demo */
+  .listen-demo{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .listen-card{
+    background:rgba(247,243,232,0.06); border:1px solid rgba(247,243,232,0.16);
+    border-radius:10px; padding:18px;
+  }
+  .listen-card h5{margin:0 0 10px; font-size:0.85rem; letter-spacing:0.04em; text-transform:uppercase; color:var(--gold-300); font-weight:500;}
+  .error-row{display:flex; justify-content:space-between; font-size:0.88rem; padding:7px 0; border-bottom:1px solid rgba(247,243,232,0.1);}
+  .error-row:last-child{border-bottom:none;}
+  .error-tag{font-family:'IBM Plex Mono', monospace; font-size:0.72rem; padding:2px 8px; border-radius:999px;}
+  .error-tag.medd{background:rgba(201,162,39,0.2); color:var(--gold-300);}
+  .error-tag.ok{background:rgba(120,200,150,0.15); color:#9fdcb5;}
+
+  .record-btn{
+    display:flex; align-items:center; gap:10px;
+    background:var(--gold-500); color:var(--emerald-950);
+    border:none; border-radius:999px; padding:11px 20px; font-weight:600; font-size:0.9rem;
+  }
+  .dot{width:9px;height:9px;border-radius:50%;background:#c0392b;}
+
+  /* ---------- Daily tracking demo ---------- */
+  .tracker-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:18px;}
+  .tracker-day{
+    aspect-ratio:1; border-radius:6px; background:rgba(247,243,232,0.08);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-size:0.7rem; color:var(--sand); opacity:0.6;
+  }
+  .tracker-day.done{background:var(--gold-500); color:var(--emerald-950); opacity:1; font-weight:600;}
+  .stat-row{display:flex; gap:28px; flex-wrap:wrap;}
+  .stat{font-family:'IBM Plex Mono', monospace;}
+  .stat .num{font-size:1.6rem; color:var(--gold-300); display:block;}
+  .stat .label{font-size:0.72rem; opacity:0.75; text-transform:uppercase; letter-spacing:0.05em;}
+
+  /* ---------- Pricing ---------- */
+  .pricing-grid{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+  .price-card{
+    border-radius:var(--radius); padding:34px;
+    border:1px solid var(--line); background:#fff;
+    display:flex; flex-direction:column; gap:18px;
+  }
+  .price-card.premium{
+    background:var(--emerald-950); color:var(--sand); border-color:transparent; position:relative; overflow:hidden;
+  }
+  .price-card.premium::after{
+    content:'Recommandé'; position:absolute; top:18px; right:-34px;
+    background:var(--gold-500); color:var(--emerald-950); font-size:0.68rem; font-weight:700;
+    padding:5px 40px; transform:rotate(35deg); letter-spacing:0.04em;
+  }
+  .price-card h3{margin:0; font-size:1.25rem; font-family:'Amiri',serif;}
+  .price-card .price{font-family:'IBM Plex Mono', monospace; font-size:2.1rem;}
+  .price-card .price span{font-size:0.95rem; opacity:0.7;}
+  .price-card ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:11px;}
+  .price-card li{display:flex; gap:10px; font-size:0.92rem; align-items:flex-start;}
+  .price-card li svg{width:16px;height:16px; flex-shrink:0; margin-top:3px;}
+  .price-card.premium li svg{stroke:var(--gold-300);}
+  .price-card:not(.premium) li svg{stroke:var(--emerald-600);}
+
+  /* ---------- Footer ---------- */
+  footer{
+    background:var(--emerald-950); color:var(--sand);
+    padding:48px 24px 28px; margin-top:40px;
+  }
+  .footer-inner{max-width:1180px; margin:0 auto; display:flex; justify-content:space-between; gap:40px; flex-wrap:wrap;}
+  .footer-inner .logo{color:var(--sand);}
+  footer .cols{display:flex; gap:56px; flex-wrap:wrap;}
+  footer .col h6{font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--gold-300); margin:0 0 12px; font-weight:500;}
+  footer .col a{display:block; font-size:0.9rem; opacity:0.85; margin-bottom:8px; text-decoration:none;}
+  footer .col a:hover{opacity:1; text-decoration:underline;}
+  .footer-bottom{
+    max-width:1180px; margin:32px auto 0; padding-top:20px; border-top:1px solid rgba(247,243,232,0.14);
+    font-size:0.8rem; opacity:0.7;
+  }
+
+  /* ---------- Modal (connexion) ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(11,46,43,0.55);
+    display:none; align-items:center; justify-content:center; z-index:300; padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--parchment); border-radius:var(--radius); padding:36px;
+    width:100%; max-width:400px; position:relative; box-shadow:0 30px 60px -20px rgba(0,0,0,0.4);
+  }
+  .modal h3{margin:0 0 6px; color:var(--emerald-950); font-size:1.4rem;}
+  .modal p.sub{margin:0 0 26px; color:var(--ink-soft); font-size:0.9rem;}
+  .modal-close{
+    position:absolute; top:16px; right:16px; background:none; border:none;
+    width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  }
+  .modal-close:hover{background:var(--sand);}
+  .auth-option{
+    display:flex; align-items:center; gap:12px; width:100%;
+    padding:13px 16px; border-radius:10px; border:1px solid var(--line);
+    background:#fff; margin-bottom:12px; font-size:0.92rem; font-weight:500; color:var(--ink);
+    transition:border-color .2s, background .2s;
+  }
+  .auth-option:hover{border-color:var(--emerald-950);}
+  .auth-option svg,.auth-option img{width:20px;height:20px;flex-shrink:0;}
+  .auth-divider{display:flex; align-items:center; gap:10px; margin:18px 0; font-size:0.78rem; color:var(--ink-soft);}
+  .auth-divider::before,.auth-divider::after{content:''; flex:1; height:1px; background:var(--line);}
+  .auth-email{display:flex; flex-direction:column; gap:10px;}
+  .auth-email input{
+    padding:12px 14px; border-radius:10px; border:1px solid var(--line); font-family:inherit; font-size:0.92rem;
+  }
+  .auth-email input:focus{border-color:var(--emerald-950);}
+  .modal-note{margin-top:16px; font-size:0.76rem; color:var(--ink-soft); line-height:1.5;}
+  .auth-status{margin-top:10px; font-size:0.82rem; min-height:1.2em;}
+  .auth-status.error{color:#a33;}
+  .auth-status.ok{color:var(--emerald-600);}
+
+  /* ---------- Reveal on scroll ---------- */
+  .reveal{opacity:0; transform:translateY(16px); transition:opacity .6s ease, transform .6s ease;}
+  .reveal.visible{opacity:1; transform:translateY(0);}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px){
+    nav.links{display:none;}
+    .hero{grid-template-columns:1fr; padding-top:56px;}
+    .products-grid{grid-template-columns:1fr;}
+    .pricing-grid{grid-template-columns:1fr;}
+    .listen-demo{grid-template-columns:1fr;}
+    .tracker-grid{grid-template-columns:repeat(7,1fr);}
+    footer .footer-inner{flex-direction:column;}
+  }
+</style>
+</head>
+
+<body>
+
+<a href="#main" class="skip-link">Aller au contenu principal</a>
+
+<div class="hadith-bar">
+  « <strong>Le meilleur d'entre vous</strong> est celui qui apprend le Coran et l'enseigne. » — Hadith rapporté par Al-Boukhari
+</div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a href="#main" class="logo" aria-label="Rihla, accueil">
+      <svg class="logo-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="40" height="40" rx="9" fill="#0F3D3A"/>
+        <path d="M20 8 L26 16 L20 24 L14 16 Z" stroke="#C9A227" stroke-width="1.4"/>
+        <path d="M20 16 L26 24 L20 32 L14 24 Z" stroke="#E0C25F" stroke-width="1.4"/>
+      </svg>
+      Rihla
+    </a>
+    <nav class="links" aria-label="Navigation principale">
+      <a href="#produits">Produits</a>
+      <a href="#ecoute">Session d'écoute</a>
+      <a href="#tarifs">Tarifs</a>
+      <a href="#faq">Questions</a>
+    </nav>
+    <!-- Le badge utilisateur était imbriqué DANS le lien "Essayer Premium" (HTML invalide : un bouton
+         dans un lien, et l'affichage se superposait). Il est maintenant à côté, comme les autres boutons. -->
+    <div class="nav-actions">
+      <button class="btn btn-ghost" id="openLogin">Se connecter</button>
+      <a href="#tarifs" class="btn btn-primary" id="premiumBtn">Essayer Premium</a>
+      <div class="user-badge" id="userBadge">
+        <span class="avatar" id="userAvatar">U</span>
+        <span id="userName">Utilisateur</span>
+        <button class="logout" id="logoutBtn">Déconnexion</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ---------- HERO ---------- -->
+  <section class="hero">
+    <div>
+      <span class="eyebrow">Accompagnement quotidien du Coran</span>
+      <h1>Avance dans ta lecture, <em>un jour</em> à la fois.</h1>
+      <p class="lead">Rihla t'accompagne dans ta mémorisation et ta lecture du Coran : suivi quotidien, lecture automatique verset par verset, et sessions d'écoute qui t'aident à corriger tes erreurs de récitation.</p>
+      <div class="hero-cta">
+        <a href="#produits" class="btn btn-primary">Découvrir les outils</a>
+        <a href="#tarifs" class="btn btn-ghost">Voir les tarifs</a>
+      </div>
+      <p class="hero-note">Gratuit pour commencer — aucune carte bancaire requise.</p>
+    </div>
+    <div class="hero-visual">
+      <div class="girih-frame">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <polygon class="girih-line" points="200,60 292,145 292,255 200,340 108,255 108,145"/>
+          <polygon class="girih-line two" points="200,120 250,160 250,240 200,280 150,240 150,160"/>
+          <line class="girih-line two" x1="108" y1="145" x2="292" y2="255"/>
+          <line class="girih-line two" x1="292" y1="145" x2="108" y2="255"/>
+        </svg>
+        <div class="girih-caption">
+          <span>JOUR 47</span>
+          <span>SOURATE AL-KAHF · V. 12</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true">
+    <svg viewBox="0 0 1180 34"><line x1="0" y1="17" x2="1180" y2="17" stroke="#0F3D3A" stroke-opacity="0.15" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+  </div>
+
+  <!-- ---------- PRODUITS ---------- -->
+  <section id="produits" class="reveal">
+    <div class="section-head">
+      <span class="eyebrow">Les outils</span>
+      <h2>Trois outils, un seul objectif : avancer.</h2>
+      <p>Clique sur un outil pour voir comment il fonctionne concrètement.</p>
+    </div>
+
+    <div class="products-grid">
+      <!-- Suivi quotidien -->
+      <button class="product-card" data-panel="panel-suivi" aria-expanded="false" aria-controls="panel-suivi">
+        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 14l2.5 2.5L16 11"/></svg></div>
+        <span class="tag">Suivi</span>
+        <h3>Mon suivi quotidien</h3>
+        <p>Coche tes lectures du jour, suis ta régularité sur la semaine et garde ta série active.</p>
+        <span class="expand-hint">Voir la démo →</span>
+      </button>
+
+      <!-- Lecture automatique -->
+      <button class="product-card" data-panel="panel-lecture" aria-expanded="false" aria-controls="panel-lecture">
+        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4V8z" fill="currentColor" stroke="none"/></svg></div>
+        <span class="tag">Audio</span>
+        <h3>Lecture automatique</h3>
+        <p>Écoute la récitation pendant que le texte défile mot par mot, pour suivre sans perdre ta place.</p>
+        <span class="expand-hint">Voir la démo →</span>
+      </button>
+
+      <!-- Session d'écoute -->
+      <button class="product-card" data-panel="panel-ecoute" aria-expanded="false" aria-controls="panel-ecoute">
+        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/></svg></div>
+        <span class="tag">Correction</span>
+        <h3 id="ecoute-titre">Session d'écoute</h3>
+        <p>Récite, et reçois un retour clair sur les points à corriger pour progresser sereinement.</p>
+        <span class="expand-hint">Voir la démo →</span>
+      </button>
+
+      <!-- Panel: suivi quotidien -->
+      <div class="panel" id="panel-suivi">
+        <h4>Mon suivi quotidien</h4>
+        <p>Une vue simple de ta semaine : les jours où tu as lu apparaissent en doré. Ta série (streak) et ton temps de lecture cumulé sont toujours visibles.</p>
+        <div class="reader-demo">
+          <div class="tracker-grid">
+            <div class="tracker-day done">L</div>
+            <div class="tracker-day done">M</div>
+            <div class="tracker-day done">M</div>
+            <div class="tracker-day">J</div>
+            <div class="tracker-day done">V</div>
+            <div class="tracker-day done">S</div>
+            <div class="tracker-day">D</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat"><span class="num">12</span><span class="label">Jours de suite</span></div>
+            <div class="stat"><span class="num">3h20</span><span class="label">Cette semaine</span></div>
+            <div class="stat"><span class="num">86%</span><span class="label">Régularité du mois</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: lecture automatique -->
+      <div class="panel" id="panel-lecture">
+        <h4>Lecture automatique</h4>
+        <p>Lance la lecture : chaque mot se met en surbrillance au fil de la récitation, pour garder le rythme sans effort.</p>
+        <div class="reader-demo">
+          <div class="reader-controls">
+            <button class="play-btn" id="playBtn" aria-label="Lancer la lecture automatique">
+              <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            </button>
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+            <span class="timer" id="timer">00:00 / 00:14</span>
+          </div>
+          <p class="verse-line" id="verseLine" lang="ar">
+            <span class="verse-word">بِسْمِ</span>
+            <span class="verse-word">اللَّهِ</span>
+            <span class="verse-word">الرَّحْمَٰنِ</span>
+            <span class="verse-word">الرَّحِيمِ</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Panel: session d'écoute (l'id correspond maintenant à aria-controls="panel-ecoute" du bouton) -->
+      <div class="panel" id="panel-ecoute">
+        <h4>Session d'écoute — repère tes erreurs</h4>
+        <p>Enregistre ta récitation d'un passage. La session t'indique, verset par verset, les points de tajwid à retravailler — sans jugement, juste des repères clairs pour progresser.</p>
+        <div class="listen-demo">
+          <div class="listen-card">
+            <h5>Enregistrement</h5>
+            <button class="record-btn" id="recordBtn"><span class="dot"></span> Démarrer l'enregistrement</button>
+            <p style="margin-top:14px;font-size:0.85rem;opacity:0.8;">Récite la sourate Al-Fatiha, verset 1 à 3.</p>
+          </div>
+          <div class="listen-card">
+            <h5>Retour après écoute</h5>
+            <div class="error-row"><span>Verset 1 — madd</span><span class="error-tag medd">À revoir</span></div>
+            <div class="error-row"><span>Verset 2 — makhraj</span><span class="error-tag ok">Correct</span></div>
+            <div class="error-row"><span>Verset 3 — ghunna</span><span class="error-tag medd">À revoir</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true">
+    <svg viewBox="0 0 1180 34"><line x1="0" y1="17" x2="1180" y2="17" stroke="#0F3D3A" stroke-opacity="0.15" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+  </div>
+
+  <!-- ---------- TARIFS ---------- -->
+  <section id="tarifs" class="reveal">
+    <div class="section-head">
+      <span class="eyebrow">Tarifs</span>
+      <h2>Commence gratuitement, avance plus loin avec Premium.</h2>
+      <p>Change de formule à tout moment, sans engagement.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <h3>Gratuit</h3>
+        <div class="price">0€ <span>/ toujours</span></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Suivi quotidien de base</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Lecture automatique (3 sourates)</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>1 session d'écoute par semaine</li>
+        </ul>
+        <a href="#" class="btn btn-ghost" id="startFree">Commencer gratuitement</a>
+      </div>
+      <div class="price-card premium">
+        <h3>Premium</h3>
+        <div class="price mono">7,99€ <span>/ mois</span></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Suivi quotidien avancé + rappels</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Lecture automatique illimitée</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Sessions d'écoute illimitées</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Statistiques détaillées de progression</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Accès hors-ligne</li>
+        </ul>
+        <button class="btn btn-gold" id="openLoginPremium">Passer à Premium</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- FAQ ---------- -->
+  <section id="faq" class="reveal">
+    <div class="section-head">
+      <span class="eyebrow">Questions fréquentes</span>
+      <h2>Ce qu'on te demande le plus souvent.</h2>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;">
+      <details style="background:#fff;padding:20px 24px;">
+        <summary style="cursor:pointer;font-weight:500;">La session d'écoute enregistre-t-elle ma voix en permanence ?</summary>
+        <p style="color:var(--ink-soft);margin-top:10px;font-size:0.92rem;">Non. L'enregistrement démarre uniquement quand tu appuies sur le bouton, et s'arrête à ta demande.</p>
+      </details>
+      <details style="background:#fff;padding:20px 24px;">
+        <summary style="cursor:pointer;font-weight:500;">Puis-je annuler mon abonnement Premium à tout moment ?</summary>
+        <p style="color:var(--ink-soft);margin-top:10px;font-size:0.92rem;">Oui, sans engagement ni frais cachés, directement depuis les paramètres de ton compte.</p>
+      </details>
+      <details style="background:#fff;padding:20px 24px;">
+        <summary style="cursor:pointer;font-weight:500;">Mes données de progression sont-elles privées ?</summary>
+        <p style="color:var(--ink-soft);margin-top:10px;font-size:0.92rem;">Oui, ton suivi et tes enregistrements ne sont visibles que par toi.</p>
+      </details>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <a href="#main" class="logo">
+      <svg class="logo-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="40" height="40" rx="9" fill="#C9A227" fill-opacity="0.15"/>
+        <path d="M20 8 L26 16 L20 24 L14 16 Z" stroke="#C9A227" stroke-width="1.4"/>
+      </svg>
+      Rihla
+    </a>
+    <div class="cols">
+      <div class="col">
+        <h6>Produit</h6>
+        <a href="#produits">Suivi quotidien</a>
+        <a href="#produits">Lecture automatique</a>
+        <a href="#ecoute">Session d'écoute</a>
+      </div>
+      <div class="col">
+        <h6>Compte</h6>
+        <a href="#" id="footerLogin">Se connecter</a>
+        <a href="#tarifs">Tarifs</a>
+      </div>
+      <div class="col">
+        <h6>À propos</h6>
+        <a href="#faq">Questions</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 Rihla. Un compagnon pour ta lecture du Coran, jour après jour.</div>
+</footer>
+
+<!-- ---------- MODAL CONNEXION ---------- -->
+<div class="modal-overlay" id="loginOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-close" id="closeLogin" aria-label="Fermer">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h3 id="modalTitle">Se connecter</h3>
+    <p class="sub">Accède à ton suivi depuis n'importe quel appareil.</p>
+
+    <button class="auth-option" id="authGoogle">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20.5H24v7h11.3C33.9 31.4 29.4 34.5 24 34.5c-6.9 0-12.5-5.6-12.5-12.5S17.1 9.5 24 9.5c3.2 0 6 1.2 8.2 3.1l5.2-5.2C34.1 4.4 29.3 2.5 24 2.5 12.4 2.5 3 11.9 3 23.5S12.4 44.5 24 44.5 45 35.1 45 23.5c0-1-.1-2-.4-3z"/><path fill="#FF3D00" d="M6.3 14.7l5.8 4.2C13.6 15.3 18.4 12.5 24 12.5c3.2 0 6 1.2 8.2 3.1l5.2-5.2C34.1 6.9 29.3 5 24 5c-7.4 0-13.8 4.2-17.1 10.3z"/><path fill="#4CAF50" d="M24 44.5c5.2 0 9.9-1.8 13.6-4.8l-6.3-5.3C29.2 36 26.7 37 24 37c-5.3 0-9.8-3.4-11.4-8.1l-6.4 4.9C9.9 40 16.4 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20.5H24v7h11.3c-.9 2.6-2.6 4.7-4.8 6.2l6.3 5.3C40.5 36.3 43 30.5 43 23.5c0-1-.1-2-.4-3z"/></svg>
+      Continuer avec Google
+    </button>
+    <button class="auth-option" id="authApple">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.365 1.43c0 1.14-.412 2.062-1.236 2.766-.99.86-2.13 1.35-3.29 1.257-.14-1.09.42-2.216 1.237-2.92.885-.78 2.22-1.36 3.29-1.103zm3.51 15.66c-.464 1.077-.68 1.56-1.27 2.516-.825 1.335-1.99 3-3.44 3.02-1.29.02-1.62-.84-3.37-.83-1.75.01-2.11.85-3.4.83-1.45-.02-2.55-1.51-3.375-2.85C2.15 16.9 1.53 12.9 3.2 10.16c.9-1.48 2.51-2.42 4.27-2.44 1.35-.02 2.63.9 3.46.9.83 0 2.38-1.11 4.01-.95.68.03 2.6.28 3.83 2.06-.1.06-2.29 1.34-2.27 3.99.02 3.17 2.77 4.22 2.8 4.24-.02.09-.44 1.5-1.43 3.16z"/></svg>
+      Continuer avec Apple
+    </button>
+
+    <div class="auth-divider">ou avec un e-mail</div>
+    <form class="auth-email" id="emailForm">
+      <label for="emailInput" style="font-size:0.85rem;color:var(--ink-soft);">Adresse e-mail</label>
+      <input type="email" id="emailInput" placeholder="toi@exemple.com" required>
+      <button type="submit" class="btn btn-primary" style="margin-top:4px;">Recevoir un lien de connexion</button>
+      <p class="auth-status" id="authStatus"></p>
+    </form>
+    <p class="modal-note">Connexion réelle via Supabase (Google, Apple, ou lien magique par e-mail). Pense à activer les fournisseurs Google et Apple dans ton tableau de bord Supabase pour que ces boutons fonctionnent.</p>
+  </div>
+</div>
+
+<script>
+  /* =====================================================================
+     CONFIG SUPABASE
+     Remplace ces deux valeurs par celles de ton projet
+     (Supabase > Project Settings > API).
+  ===================================================================== */
+  const SUPABASE_URL = 'https://imgzgtozhkcgsibvnopo.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltZ3pndG96aGtjZ3NpYnZub3BvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxOTIyOTgsImV4cCI6MjA5OTc2ODI5OH0.3-_aUl81wis-QPwrquyTjqqfygl5CLQUdvE6IZ34rRQ';
+
+  // "supabaseClient" (et pas "supabase") pour ne pas écraser l'objet
+  // global "supabase" fourni par la librairie chargée dans le <head>.
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ----- Éléments d'UI liés au compte -----
+  const loginBtn   = document.getElementById('openLogin');
+  const premiumBtn = document.getElementById('premiumBtn');
+  const userBadge  = document.getElementById('userBadge');
+  const userAvatar = document.getElementById('userAvatar');
+  const userName   = document.getElementById('userName');
+  const authStatus = document.getElementById('authStatus');
+
+  function showLoggedInUI(user){
+    if(!user) return;
+    const label = (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) || user.email || 'Utilisateur';
+    loginBtn.style.display = 'none';
+    premiumBtn.style.display = 'none';
+    userBadge.classList.add('visible');
+    userAvatar.textContent = label.charAt(0).toUpperCase();
+    userName.textContent = label;
+  }
+
+  function showLoggedOutUI(){
+    loginBtn.style.display = '';
+    premiumBtn.style.display = '';
+    userBadge.classList.remove('visible');
+  }
+
+  // Vérifie la session au chargement de la page
+  supabaseClient.auth.getSession().then(({ data }) => {
+    if(data.session && data.session.user){
+      showLoggedInUI(data.session.user);
+    }
+  });
+
+  // Se met à jour automatiquement à chaque connexion / déconnexion
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if(session && session.user){
+      showLoggedInUI(session.user);
+      overlay.classList.remove('open');
+    } else {
+      showLoggedOutUI();
+    }
+  });
+
+  // ----- Panels produits -----
+  document.querySelectorAll('.product-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const panel = document.getElementById(card.dataset.panel);
+      const isOpen = panel.classList.contains('open');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
+      document.querySelectorAll('.product-card').forEach(c => c.setAttribute('aria-expanded','false'));
+      if(!isOpen){
+        panel.classList.add('open');
+        card.setAttribute('aria-expanded','true');
+        panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+      }
+    });
+  });
+
+  // ----- Démo lecture automatique -----
+  const playBtn = document.getElementById('playBtn');
+  const progressFill = document.getElementById('progressFill');
+  const timer = document.getElementById('timer');
+  const words = document.querySelectorAll('#verseLine .verse-word');
+  let playing = false, playInterval;
+
+  playBtn?.addEventListener('click', () => {
+    if(playing){ clearInterval(playInterval); playing = false; return; }
+    playing = true;
+    let step = 0;
+    const total = words.length;
+    words.forEach(w => w.classList.remove('active'));
+    playInterval = setInterval(() => {
+      words.forEach(w => w.classList.remove('active'));
+      if(step < total){
+        words[step].classList.add('active');
+        const pct = Math.round(((step + 1) / total) * 100);
+        progressFill.style.width = pct + '%';
+        const sec = Math.round(((step + 1) / total) * 14);
+        timer.textContent = '00:' + String(sec).padStart(2, '0') + ' / 00:14';
+        step++;
+      } else {
+        clearInterval(playInterval);
+        playing = false;
+        progressFill.style.width = '0%';
+        timer.textContent = '00:00 / 00:14';
+        words.forEach(w => w.classList.remove('active'));
+      }
+    }, 900);
+  });
+
+  // ----- Démo enregistrement -----
+  const recordBtn = document.getElementById('recordBtn');
+  recordBtn?.addEventListener('click', () => {
+    const recording = recordBtn.classList.toggle('recording');
+    recordBtn.innerHTML = recording
+      ? '<span class="dot"></span> Enregistrement en cours…'
+      : '<span class="dot"></span> Démarrer l\'enregistrement';//'
+  });
+
+  // ----- Modal connexion : ouverture / fermeture -----
+  const overlay = document.getElementById('loginOverlay');
+  const openers = [loginBtn, document.getElementById('openLoginPremium'), document.getElementById('footerLogin'), document.getElementById('startFree')];
+  openers.forEach(btn => btn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    authStatus.textContent = '';
+    authStatus.className = 'auth-status';
+    overlay.classList.add('open');
+    document.getElementById('emailInput').focus();
+  }));
+  document.getElementById('closeLogin').addEventListener('click', () => overlay.classList.remove('open'));
+  overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('open'); });
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape') overlay.classList.remove('open'); });
+
+  // ----- Connexion réelle Supabase (Google / Apple / e-mail) -----
+  document.getElementById('authGoogle').addEventListener('click', async () => {
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href }
+    });
+    if(error){
+      authStatus.textContent = 'Erreur Google : ' + error.message;
+      authStatus.className = 'auth-status error';
+    }
+    // En cas de succès, Supabase redirige vers Google puis revient sur cette page.
+  });
+
+  document.getElementById('authApple').addEventListener('click', async () => {
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'apple',
+      options: { redirectTo: window.location.href }
+    });
+    if(error){
+      authStatus.textContent = 'Erreur Apple : ' + error.message;
+      authStatus.className = 'auth-status error';
+    }
+  });
+
+  document.getElementById('emailForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('emailInput').value.trim();
+    if(!email) return;
+    authStatus.textContent = 'Envoi du lien en cours…';
+    authStatus.className = 'auth-status';
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.href }
+    });
+    if(error){
+      authStatus.textContent = 'Erreur : ' + error.message;
+      authStatus.className = 'auth-status error';
+    } else {
+      authStatus.textContent = 'Lien de connexion envoyé à ' + email + '. Vérifie ta boîte mail.';
+      authStatus.className = 'auth-status ok';
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    showLoggedOutUI();
+  });
+
+  // ----- Reveal on scroll -----
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => { if(entry.isIntersecting) entry.target.classList.add('visible'); });
+  }, {threshold:0.12});
+  revealEls.forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>
