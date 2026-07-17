@@ -414,6 +414,17 @@
     background:rgba(247,243,232,0.1); border:1px solid rgba(247,243,232,0.25); color:var(--sand);
     border-radius:999px; padding:6px 14px; font-size:0.78rem;
   }
+  .city-search{display:flex; gap:8px; margin-bottom:14px;}
+  .city-search input{
+    flex:1; padding:9px 12px; border-radius:8px; border:1px solid rgba(247,243,232,0.25);
+    background:rgba(247,243,232,0.08); color:var(--sand); font-family:inherit; font-size:0.85rem;
+  }
+  .city-search input::placeholder{color:rgba(237,228,211,0.55);}
+  .city-search button{
+    background:var(--gold-500); color:var(--emerald-950); border:none; border-radius:8px;
+    padding:9px 16px; font-size:0.82rem; font-weight:600; flex-shrink:0;
+  }
+  .city-search-status{font-size:0.76rem; color:rgba(237,228,211,0.75); margin:0 0 18px;}
   .next-prayer{
     text-align:center; padding:20px 0 26px; border-bottom:1px solid rgba(247,243,232,0.15); margin-bottom:20px;
   }
@@ -616,6 +627,11 @@
           <span class="place mono" id="prayerPlace">Localisation en cours…</span>
           <button id="prayerLocate">Actualiser ma position</button>
         </div>
+        <div class="city-search">
+          <input type="text" id="citySearchInput" placeholder="Ou tape ta ville (plus fiable sur ordinateur)">
+          <button id="citySearchBtn">Chercher</button>
+        </div>
+        <p class="city-search-status" id="citySearchStatus"></p>
         <div class="next-prayer">
           <div class="label">Prochaine prière</div>
           <div class="name" id="nextPrayerName">—</div>
@@ -1565,6 +1581,34 @@
     );
   }
   document.getElementById('prayerLocate').addEventListener('click', locateAndInitPrayers);
+
+  // Recherche manuelle de ville — bien plus fiable que la géolocalisation navigateur
+  // sur un ordinateur (qui n'a pas de GPS et devine la position via le réseau, parfois
+  // avec une erreur de plusieurs dizaines de km).
+  const citySearchStatus = document.getElementById('citySearchStatus');
+  async function searchCityAndInitPrayers(){
+    const query = document.getElementById('citySearchInput').value.trim();
+    if(!query) return;
+    citySearchStatus.textContent = 'Recherche en cours…';
+    try{
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=fr`);
+      const json = await res.json();
+      const result = json.results && json.results[0];
+      if(!result){
+        citySearchStatus.textContent = "Ville introuvable — essaie une autre orthographe.";
+        return;
+      }
+      citySearchStatus.textContent = '';
+      await initPrayerTimes(result.latitude, result.longitude, false);
+      prayerPlace.textContent = [result.name, result.country].filter(Boolean).join(', ');
+    }catch(err){
+      citySearchStatus.textContent = "Recherche impossible pour le moment — réessaie.";
+    }
+  }
+  document.getElementById('citySearchBtn').addEventListener('click', searchCityAndInitPrayers);
+  document.getElementById('citySearchInput').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ e.preventDefault(); searchCityAndInitPrayers(); }
+  });
 
   // Boussole du téléphone (optionnelle) : oriente l'aiguille en direct sur mobile
   document.getElementById('compassEnable').addEventListener('click', async () => {
