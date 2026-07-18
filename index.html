@@ -670,7 +670,7 @@
     <div class="section-head">
       <span class="eyebrow">Rappel quotidien</span>
       <h2>Un hadith authentique, chaque jour.</h2>
-      <p>Puisé dans les recueils authentiques de Boukhari et Muslim — plus de 700 hadiths disponibles, un nouveau rappel chaque jour.</p>
+      <p>Puisé dans les recueils authentiques de Boukhari et Muslim, centré sur le savoir, les mérites du Coran et le bon comportement — un nouveau rappel chaque jour.</p>
     </div>
     <div class="hadith-daily-card">
       <p class="translation" id="hadithText">Chargement du rappel du jour…</p>
@@ -1306,9 +1306,7 @@
   // cdn.islamic.network (le même réseau qui alimente la plupart des grosses apps Coran).
   // Contrairement à la recherche floue sur mp3quran.net, il n'y a ici aucune ambiguïté
   // de nom possible : chaque identifiant correspond à un seul et unique récitateur.
-  const CONFIRMED_CDN_RECITERS = [
-    { label: 'Abdul Rahman Al-Sudais', edition: 'ar.sudais' }
-  ];
+  const CONFIRMED_CDN_RECITERS = [];
 
   function playCdnSurahAudio(edition, surahNumber, label){
     miniPlayerAudio.onended = null;
@@ -1343,12 +1341,14 @@
   }
 
   // Récitateurs fiabilisés via l'API metadata d'archive.org : un seul fichier audio
-  // PAR SOURATE (pas verset par verset), donc une lecture sans coupure. L'identifiant
-  // d'item ci-dessous est vérifié et correspond à un seul récitateur.
+  // PAR SOURATE (pas verset par verset), donc une lecture sans coupure. Les identifiants
+  // d'item ci-dessous sont vérifiés et correspondent chacun à un seul récitateur.
   const ARCHIVE_FULL_QURAN_RECITERS = [
-    { label: 'Maher Al Muaiqly', identifier: 'Maher_Al_Muaiqly_201610' }
+    { label: 'Maher Al Muaiqly', identifier: 'Maher_Al_Muaiqly_201610' },
+    { label: 'Abdul Rahman Al-Sudais', identifier: 'HaramainSudais' }
   ];
   const archiveFileMapCache = {};
+
 
   async function getArchiveSurahFileMap(identifier){
     if(archiveFileMapCache[identifier]) return archiveFileMapCache[identifier];
@@ -1356,7 +1356,7 @@
     const json = await res.json();
     const map = {};
     (json.files || []).forEach(f => {
-      const m = f.name.match(/^(\d{3})-.*\.(ogg|mp3)$/i);
+      const m = f.name.match(/^(\d{3})(?:[-_ ].*)?\.(ogg|mp3)$/i);
       if(m) map[Number(m[1])] = f.name;
     });
     archiveFileMapCache[identifier] = map;
@@ -1458,12 +1458,18 @@
 
   /* =====================================================================
      HADITH DU JOUR — via l'API fawazahmed0/hadith-api (Boukhari & Muslim)
+     On ne pioche plus au hasard dans tout le recueil : on cible les chapitres
+     consacrés au savoir, aux mérites du Coran et au bon comportement.
   ===================================================================== */
   const hadithText = document.getElementById('hadithText');
   const hadithRef = document.getElementById('hadithRef');
-  const HADITH_EDITIONS = [
-    { id: 'fra-bukhari', label: 'Sahih Al-Boukhari' },
-    { id: 'fra-muslim',  label: 'Sahih Mouslim' }
+
+  // Plages de numéros correspondant à des livres (chapitres) précis des recueils.
+  const HADITH_TOPIC_RANGES = [
+    { edition: 'fra-bukhari', label: 'Sahih Al-Boukhari — Livre du Savoir',              min: 57,   max: 134  },
+    { edition: 'fra-bukhari', label: 'Sahih Al-Boukhari — Mérites du Coran',             min: 4986, max: 5062 },
+    { edition: 'fra-bukhari', label: 'Sahih Al-Boukhari — Bon comportement (Al-Adab)',    min: 5644, max: 6226 },
+    { edition: 'fra-muslim',  label: 'Sahih Mouslim — Livre du Savoir',                  min: 2652, max: 2699 }
   ];
 
   function seededRandom(seed){
@@ -1475,18 +1481,18 @@
   async function loadDailyHadith(forceNew){
     hadithText.textContent = 'Chargement du rappel du jour…';
     const daySeed = forceNew ? Date.now() : Number(new Date().toISOString().slice(0,10).replace(/-/g,''));
-    for(let attempt = 0; attempt < 6; attempt++){
+    for(let attempt = 0; attempt < 8; attempt++){
       const seed = daySeed + attempt * 97;
-      const edition = HADITH_EDITIONS[Math.floor(seededRandom(seed) * HADITH_EDITIONS.length)];
-      const num = 1 + Math.floor(seededRandom(seed + 1) * 3000); // reste dans une plage sûre des deux recueils
+      const range = HADITH_TOPIC_RANGES[Math.floor(seededRandom(seed) * HADITH_TOPIC_RANGES.length)];
+      const num = range.min + Math.floor(seededRandom(seed + 1) * (range.max - range.min + 1));
       try{
-        const res = await fetch(`https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/${edition.id}/${num}.json`);
+        const res = await fetch(`https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/${range.edition}/${num}.json`);
         if(!res.ok) continue;
         const json = await res.json();
         const h = json.hadiths && json.hadiths[0];
         if(h && h.text){
           hadithText.textContent = h.text;
-          hadithRef.textContent = `${edition.label} — hadith n°${h.hadithnumber || num}`;
+          hadithRef.textContent = `${range.label} — hadith n°${h.hadithnumber || num}`;
           return;
         }
       }catch(err){ /* on retente avec un autre numéro */ }
