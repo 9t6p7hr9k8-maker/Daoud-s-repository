@@ -1253,6 +1253,7 @@
 
   function playSurahAudio(moshaf, surahNumber, label){
     miniPlayerAudio.onended = null;
+    miniPlayerAudio.onerror = null;
     if(!moshaf){
       miniPlayerName.textContent = `Audio indisponible pour ${label}.`;
       miniPlayerEl.classList.add('visible');
@@ -1312,13 +1313,23 @@
   function playCdnSurahAudio(edition, surahNumber, label){
     miniPlayerAudio.onended = null;
     const padded = String(surahNumber).padStart(3, '0');
-    const url = `https://cdn.islamic.network/quran/audio-surah/128/${edition}/${padded}.mp3`;
-    miniPlayerAudio.src = url;
-    miniPlayerName.textContent = label;
-    miniPlayerEl.classList.add('visible');
-    miniPlayerAudio.play().catch(() => {
-      miniPlayerName.textContent = `Lecture impossible pour ${label} — réessaie.`;
-    });
+    const bitrates = [128, 192, 64, 40, 32]; // certains récitateurs ne sont disponibles qu'à certains débits
+    let i = 0;
+    function tryNext(){
+      if(i >= bitrates.length){
+        miniPlayerName.textContent = `Lecture impossible pour ${label} — réessaie plus tard.`;
+        miniPlayerEl.classList.add('visible');
+        return;
+      }
+      const url = `https://cdn.islamic.network/quran/audio-surah/${bitrates[i]}/${edition}/${padded}.mp3`;
+      i++;
+      miniPlayerAudio.onerror = tryNext;
+      miniPlayerAudio.src = url;
+      miniPlayerName.textContent = label;
+      miniPlayerEl.classList.add('visible');
+      miniPlayerAudio.play().catch(() => {}); // en cas d'échec réel, l'évènement "error" ci-dessus prend le relais
+    }
+    tryNext();
   }
 
   function renderConfirmedCdnReciters(freeList){
@@ -1331,49 +1342,54 @@
     });
   }
 
-  // Récitateurs fiabilisés via everyayah.com (archive audio de référence utilisée
-  // depuis des années par de nombreuses apps Coran). Le nom de dossier ci-dessous est
-  // vérifié et correspond à un seul récitateur — pas de recherche floue, donc pas de
-  // risque de confusion avec quelqu'un d'autre. Contrairement au CDN par sourate,
-  // everyayah.com sert l'audio verset par verset : on enchaîne automatiquement
-  // les versets à la suite.
-  const EVERYAYAH_CONFIRMED_RECITERS = [
-    { label: 'Maher Al Muaiqly', folder: 'Maher_AlMuaiqly_64kbps' }
+  // Récitateurs fiabilisés via l'API metadata d'archive.org : un seul fichier audio
+  // PAR SOURATE (pas verset par verset), donc une lecture sans coupure. L'identifiant
+  // d'item ci-dessous est vérifié et correspond à un seul récitateur.
+  const ARCHIVE_FULL_QURAN_RECITERS = [
+    { label: 'Maher Al Muaiqly', identifier: 'Maher_Al_Muaiqly_201610' }
   ];
+  const archiveFileMapCache = {};
 
-  function playEveryAyahSurah(folder, surahNumber, label){
-    const surahMeta = SURAHS.find(s => s.number === Number(surahNumber));
-    const totalAyahs = surahMeta ? surahMeta.numberOfAyahs : null;
-    if(!totalAyahs){
-      miniPlayerName.textContent = "Choisis d'abord une sourate.";
-      miniPlayerEl.classList.add('visible');
-      return;
-    }
-    const surahPadded = String(surahNumber).padStart(3, '0');
-    let ayah = 1;
-    function playNext(){
-      if(ayah > totalAyahs){
-        miniPlayerName.textContent = `${label} — fin de la sourate.`;
+  async function getArchiveSurahFileMap(identifier){
+    if(archiveFileMapCache[identifier]) return archiveFileMapCache[identifier];
+    const res = await fetch(`https://archive.org/metadata/${identifier}`);
+    const json = await res.json();
+    const map = {};
+    (json.files || []).forEach(f => {
+      const m = f.name.match(/^(\d{3})-.*\.(ogg|mp3)$/i);
+      if(m) map[Number(m[1])] = f.name;
+    });
+    archiveFileMapCache[identifier] = map;
+    return map;
+  }
+
+  async function playArchiveOrgSurah(identifier, surahNumber, label){
+    miniPlayerAudio.onended = null;
+    miniPlayerAudio.onerror = null;
+    miniPlayerName.textContent = `Chargement de ${label}…`;
+    miniPlayerEl.classList.add('visible');
+    try{
+      const map = await getArchiveSurahFileMap(identifier);
+      const filename = map[Number(surahNumber)];
+      if(!filename){
+        miniPlayerName.textContent = `${label} n'a pas cette sourate disponible.`;
         return;
       }
-      const ayahPadded = String(ayah).padStart(3, '0');
-      miniPlayerAudio.src = `https://everyayah.com/data/${folder}/${surahPadded}${ayahPadded}.mp3`;
-      miniPlayerName.textContent = `${label} — verset ${ayah}/${totalAyahs}`;
-      miniPlayerEl.classList.add('visible');
+      miniPlayerAudio.src = `https://archive.org/download/${identifier}/${encodeURIComponent(filename)}`;
+      miniPlayerName.textContent = label;
       miniPlayerAudio.play().catch(() => {
         miniPlayerName.textContent = `Lecture impossible pour ${label} — réessaie.`;
       });
-      ayah++;
+    }catch(err){
+      miniPlayerName.textContent = `Impossible de charger ${label} pour le moment.`;
     }
-    miniPlayerAudio.onended = playNext;
-    playNext();
   }
 
-  function renderConfirmedEveryAyahReciters(freeList){
-    EVERYAYAH_CONFIRMED_RECITERS.forEach(({label, folder}) => {
+  function renderArchiveFullQuranReciters(freeList){
+    ARCHIVE_FULL_QURAN_RECITERS.forEach(({label, identifier}) => {
       const card = buildReciterCard(label, 'Murattal · gratuit', () => {
         const n = document.getElementById('reciterSurahSelect').value;
-        playEveryAyahSurah(folder, n, label);
+        playArchiveOrgSurah(identifier, n, label);
       }, false);
       freeList.appendChild(card);
     });
@@ -1384,7 +1400,7 @@
     const premiumList = document.getElementById('premiumRecitersList');
     freeList.innerHTML = '';
     renderConfirmedCdnReciters(freeList); // toujours affichés, même si mp3quran.net est indisponible
-    renderConfirmedEveryAyahReciters(freeList);
+    renderArchiveFullQuranReciters(freeList);
     try{
       const res = await fetch('https://www.mp3quran.net/api/v3/reciters?language=eng');
       const json = await res.json();
