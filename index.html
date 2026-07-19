@@ -536,9 +536,79 @@
     .tracker-grid{grid-template-columns:repeat(7,1fr);}
     footer .footer-inner{flex-direction:column;}
   }
-</style>
-</head>
 
+  /* ---------- SPA : navigation par onglets/vues ---------- */
+  .view{display:none;}
+  .view.active{display:block;}
+  .nav-link{
+    background:none; border:none; font-family:inherit; font-size:0.95rem; color:var(--ink-soft);
+    cursor:pointer; padding:4px 0; transition:color .2s; border-bottom:2px solid transparent;
+  }
+  .nav-link:hover, .nav-link.active{color:var(--emerald-950);}
+  .nav-link.active{border-bottom-color:var(--gold-500);}
+  .back-link{
+    display:inline-flex; align-items:center; gap:6px; background:none; border:none;
+    color:var(--emerald-600); font-family:inherit; font-size:0.86rem; font-weight:500;
+    padding:0; margin:32px 24px 0; cursor:pointer;
+  }
+  .back-link:hover{color:var(--emerald-950);}
+  .view-intro{max-width:1180px; margin:12px auto 0; padding:0 24px;}
+
+  /* ---------- Vue d'ensemble (page d'accueil) ---------- */
+  .overview-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:22px;
+  }
+  .overview-card{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+    padding:26px; text-align:left; display:flex; flex-direction:column; gap:12px;
+    transition:transform .2s ease, box-shadow .2s ease; width:100%; cursor:pointer;
+  }
+  .overview-card:hover{transform:translateY(-3px); box-shadow:var(--shadow); border-color:transparent;}
+  .overview-card .product-icon{width:40px; height:40px; border-radius:9px; background:var(--emerald-950); display:flex; align-items:center; justify-content:center;}
+  .overview-card .product-icon svg{width:20px;height:20px;stroke:var(--gold-300);}
+  .overview-card h3{margin:0; font-size:1.08rem; color:var(--emerald-950);}
+  .overview-card p{margin:0; color:var(--ink-soft); font-size:0.88rem; line-height:1.5;}
+  .overview-card .expand-hint{margin-top:auto; font-size:0.8rem; color:var(--gold-500); font-weight:500;}
+
+  .hadith-teaser{
+    background:var(--emerald-950); color:var(--sand); border-radius:var(--radius);
+    padding:34px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;
+  }
+  .hadith-teaser p{margin:0; max-width:56ch; opacity:0.9; line-height:1.6;}
+  .hadith-teaser h3{margin:0 0 8px; color:var(--gold-300); font-size:1.2rem;}
+
+  /* ---------- Vue Prières : fiche des 5 prières ---------- */
+  .prayer-info-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-top:32px;}
+  .prayer-info-card{background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px;}
+  .prayer-info-card h4{margin:0 0 6px; font-family:'Amiri',serif; color:var(--emerald-950); font-size:1.05rem;}
+  .prayer-info-card p{margin:0; font-size:0.82rem; color:var(--ink-soft); line-height:1.5;}
+
+  /* ---------- Vues démo (suivi / lecture / écoute) : mode d'emploi ---------- */
+  .how-it-works{display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin:32px 0 40px;}
+  .how-step{background:#fff; border:1px solid var(--line); border-radius:10px; padding:20px;}
+  .how-step .step-num{
+    display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px;
+    border-radius:50%; background:var(--sand); color:var(--emerald-950); font-family:'IBM Plex Mono',monospace;
+    font-size:0.78rem; font-weight:600; margin-bottom:10px;
+  }
+  .how-step h4{margin:0 0 6px; font-size:0.98rem; color:var(--emerald-950);}
+  .how-step p{margin:0; font-size:0.85rem; color:var(--ink-soft); line-height:1.5;}
+  .demo-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:30px;}
+
+  /* ---------- Vue Coran : reprise de lecture ---------- */
+  .resume-banner{
+    display:none; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    background:var(--sand); border-radius:10px; padding:14px 18px; margin-bottom:20px; font-size:0.88rem;
+  }
+  .resume-banner.visible{display:flex;}
+  .resume-banner button{background:var(--emerald-950); color:var(--parchment); border:none; border-radius:999px; padding:8px 16px; font-size:0.82rem;}
+
+  @media (max-width: 900px){
+    .overview-grid{grid-template-columns:1fr;}
+    .prayer-info-grid{grid-template-columns:repeat(2,1fr);}
+    .how-it-works{grid-template-columns:1fr;}
+  }
+</style>
 <body>
 
 <a href="#main" class="skip-link">Aller au contenu principal</a>
@@ -549,7 +619,7 @@
 
 <header class="nav">
   <div class="nav-inner">
-    <a href="#main" class="logo" aria-label="Rihla, accueil">
+    <a href="#" class="logo" data-view="view-home" aria-label="Rihla, accueil">
       <svg class="logo-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <rect width="40" height="40" rx="9" fill="#0F3D3A"/>
         <path d="M20 8 L26 16 L20 24 L14 16 Z" stroke="#C9A227" stroke-width="1.4"/>
@@ -558,19 +628,15 @@
       Rihla
     </a>
     <nav class="links" aria-label="Navigation principale">
-      <a href="#priere">Prières</a>
-      <a href="#rappel">Rappel du jour</a>
-      <a href="#produits">Produits</a>
-      <a href="#reciters">Récitateurs</a>
-      <a href="#coran">Le Coran</a>
-      <a href="#tarifs">Tarifs</a>
-      <a href="#faq">Questions</a>
+      <button class="nav-link" data-view="view-priere">Prières</button>
+      <button class="nav-link" data-view="view-rappel">Rappel du jour</button>
+      <button class="nav-link" data-view="view-reciters">Récitateurs</button>
+      <button class="nav-link" data-view="view-coran">Le Coran</button>
+      <button class="nav-link" data-view="view-home" data-scroll-to="tarifs">Tarifs</button>
     </nav>
-    <!-- Le badge utilisateur était imbriqué DANS le lien "Essayer Premium" (HTML invalide : un bouton
-         dans un lien, et l'affichage se superposait). Il est maintenant à côté, comme les autres boutons. -->
     <div class="nav-actions">
       <button class="btn btn-ghost" id="openLogin">Se connecter</button>
-      <a href="#tarifs" class="btn btn-primary" id="premiumBtn">Essayer Premium</a>
+      <a href="#" class="btn btn-primary" id="premiumBtn" data-view="view-home" data-scroll-to="tarifs">Essayer Premium</a>
       <div class="user-badge" id="userBadge">
         <span class="avatar" id="userAvatar">U</span>
         <span id="userName">Utilisateur</span>
@@ -581,15 +647,15 @@
 </header>
 
 <main id="main">
+  <div class="view active" id="view-home">
+    <section class="hero">
 
-  <!-- ---------- HERO ---------- -->
-  <section class="hero">
     <div>
       <span class="eyebrow">Accompagnement quotidien du Coran</span>
       <h1>Avance dans ta lecture, <em>un jour</em> à la fois.</h1>
       <p class="lead">Rihla t'accompagne dans ta mémorisation et ta lecture du Coran : suivi quotidien, lecture automatique verset par verset, et sessions d'écoute qui t'aident à corriger tes erreurs de récitation.</p>
       <div class="hero-cta">
-        <a href="#produits" class="btn btn-primary">Découvrir les outils</a>
+        <a href="#apercu" class="btn btn-primary">Découvrir les outils</a>
         <a href="#tarifs" class="btn btn-ghost">Voir les tarifs</a>
       </div>
       <p class="hero-note">Gratuit pour commencer — aucune carte bancaire requise.</p>
@@ -608,14 +674,148 @@
         </div>
       </div>
     </div>
-  </section>
+  
+    </section>
 
   <div class="divider" aria-hidden="true">
     <svg viewBox="0 0 1180 34"><line x1="0" y1="17" x2="1180" y2="17" stroke="#0F3D3A" stroke-opacity="0.15" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
   </div>
 
-  <!-- ---------- PRIÈRES ---------- -->
-  <section id="priere" class="reveal">
+    <section id="apercu" class="reveal">
+      <div class="section-head">
+        <span class="eyebrow">Vue d'ensemble</span>
+        <h2>Tout ce qu'il te faut, en un seul endroit.</h2>
+        <p>Choisis un outil pour l'ouvrir en entier — chacun a son propre espace, avec plus de détails et de fonctionnalités que ce court aperçu.</p>
+      </div>
+<div class="overview-grid">
+      <button class="overview-card" data-view="view-priere">
+        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 14l2.5 2.5L16 11"/></svg></div>
+        <span class="tag">Prières</span>
+        <h3>Horaires & Qibla</h3>
+        <p>Les 5 horaires calculés pour ta position, un compte à rebours en direct et le sens de la Qibla.</p>
+        <span class="expand-hint">Découvrir →</span>
+      </button>
+      <button class="overview-card" data-view="view-rappel">
+        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/></svg></div>
+        <span class="tag">Rappel quotidien</span>
+        <h3>Un hadith par jour</h3>
+        <p>Un hadith authentique sur le savoir, les mérites du Coran ou le bon comportement.</p>
+        <span class="expand-hint">Découvrir →</span>
+      </button>
+      <button class="overview-card" data-view="view-reciters">
+        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4V8z" fill="currentColor" stroke="none"/></svg></div>
+        <span class="tag">Audio</span>
+        <h3>Récitateurs</h3>
+        <p>Écoute le Coran en entier par plusieurs grands récitateurs, gratuits ou en style lent (Premium).</p>
+        <span class="expand-hint">Découvrir →</span>
+      </button>
+      <button class="overview-card" data-view="view-coran">
+        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <span class="tag">Lecture</span>
+        <h3>Le Coran en fiches</h3>
+        <p>Chaque verset en arabe, avec traduction française et anglaise, sous forme de fiches mémo.</p>
+        <span class="expand-hint">Découvrir →</span>
+      </button>
+      <button class="overview-card" data-view="view-suivi">
+        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 14l2.5 2.5L16 11"/></svg></div>
+        <span class="tag">Suivi</span>
+        <h3>Mon suivi quotidien</h3>
+        <p>Coche tes lectures du jour, suis ta régularité sur la semaine et garde ta série active.</p>
+        <span class="expand-hint">Découvrir →</span>
+      </button>
+      <button class="overview-card" data-view="view-ecoute">
+        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/></svg></div>
+        <span class="tag">Correction</span>
+        <h3>Session d'écoute</h3>
+        <p>Récite, et reçois un retour clair sur les points à corriger pour progresser sereinement.</p>
+        <span class="expand-hint">Découvrir →</span>
+      </button>
+    </div>
+    </section>
+
+  <div class="divider" aria-hidden="true">
+    <svg viewBox="0 0 1180 34"><line x1="0" y1="17" x2="1180" y2="17" stroke="#0F3D3A" stroke-opacity="0.15" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+  </div>
+
+    <section class="reveal">
+      <div class="hadith-teaser">
+        <div>
+          <h3>Le rappel du jour t'attend</h3>
+          <p>Un hadith authentique différent chaque jour, centré sur le savoir, les mérites du Coran et le bon comportement.</p>
+        </div>
+        <button class="btn btn-gold" data-view="view-rappel">Lire le rappel du jour →</button>
+      </div>
+    </section>
+
+  <div class="divider" aria-hidden="true">
+    <svg viewBox="0 0 1180 34"><line x1="0" y1="17" x2="1180" y2="17" stroke="#0F3D3A" stroke-opacity="0.15" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+  </div>
+
+    <section id="tarifs" class="reveal">
+
+    <div class="section-head">
+      <span class="eyebrow">Tarifs</span>
+      <h2>Commence gratuitement, avance plus loin avec Premium.</h2>
+      <p>Change de formule à tout moment, sans engagement.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <h3>Gratuit</h3>
+        <div class="price">0€ <span>/ toujours</span></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Suivi quotidien de base</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Lecture automatique (3 sourates)</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>1 session d'écoute par semaine</li>
+        </ul>
+        <a href="#" class="btn btn-ghost" id="startFree">Commencer gratuitement</a>
+      </div>
+      <div class="price-card premium">
+        <h3>Premium</h3>
+        <div class="price mono">7,99€ <span>/ mois</span></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Suivi quotidien avancé + rappels</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Lecture automatique illimitée</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Sessions d'écoute illimitées</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Statistiques détaillées de progression</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Accès hors-ligne</li>
+        </ul>
+        <button class="btn btn-gold" id="openLoginPremium">Passer à Premium</button>
+      </div>
+    </div>
+  
+    </section>
+
+  <div class="divider" aria-hidden="true">
+    <svg viewBox="0 0 1180 34"><line x1="0" y1="17" x2="1180" y2="17" stroke="#0F3D3A" stroke-opacity="0.15" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+  </div>
+
+    <section id="faq" class="reveal">
+
+    <div class="section-head">
+      <span class="eyebrow">Questions fréquentes</span>
+      <h2>Ce qu'on te demande le plus souvent.</h2>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;">
+      <details style="background:#fff;padding:20px 24px;">
+        <summary style="cursor:pointer;font-weight:500;">La session d'écoute enregistre-t-elle ma voix en permanence ?</summary>
+        <p style="color:var(--ink-soft);margin-top:10px;font-size:0.92rem;">Non. L'enregistrement démarre uniquement quand tu appuies sur le bouton, et s'arrête à ta demande.</p>
+      </details>
+      <details style="background:#fff;padding:20px 24px;">
+        <summary style="cursor:pointer;font-weight:500;">Puis-je annuler mon abonnement Premium à tout moment ?</summary>
+        <p style="color:var(--ink-soft);margin-top:10px;font-size:0.92rem;">Oui, sans engagement ni frais cachés, directement depuis les paramètres de ton compte.</p>
+      </details>
+      <details style="background:#fff;padding:20px 24px;">
+        <summary style="cursor:pointer;font-weight:500;">Mes données de progression sont-elles privées ?</summary>
+        <p style="color:var(--ink-soft);margin-top:10px;font-size:0.92rem;">Oui, ton suivi et tes enregistrements ne sont visibles que par toi.</p>
+      </details>
+    </div>
+  
+    </section>
+  </div>
+  <div class="view" id="view-priere">
+    <button class="back-link" data-view="view-home">← Retour à l'accueil</button>
+    <section class="reveal">
+
     <div class="section-head">
       <span class="eyebrow">Horaires &amp; Qibla</span>
       <h2>Les cinq prières, où que tu sois.</h2>
@@ -659,14 +859,21 @@
         <button class="btn btn-ghost" id="compassEnable" style="font-size:0.82rem;">Activer la boussole du téléphone</button>
       </div>
     </div>
-  </section>
+  
+    <div class="prayer-info-grid">
+      <div class="prayer-info-card"><h4>Fajr</h4><p>La prière de l'aube, avant le lever du soleil — un moment de calme avant que la journée commence.</p></div>
+      <div class="prayer-info-card"><h4>Dhuhr</h4><p>La prière de la mi-journée, une pause au cœur de l'activité quotidienne.</p></div>
+      <div class="prayer-info-card"><h4>Asr</h4><p>La prière de l'après-midi, avant que la lumière ne décline.</p></div>
+      <div class="prayer-info-card"><h4>Maghrib</h4><p>La prière du coucher du soleil, juste après que le soleil disparaît à l'horizon.</p></div>
+      <div class="prayer-info-card"><h4>Isha</h4><p>La prière de la nuit, pour clore la journée.</p></div>
+    </div>
 
-  <div class="divider" aria-hidden="true">
-    <svg viewBox="0 0 1180 34"><line x1="0" y1="17" x2="1180" y2="17" stroke="#0F3D3A" stroke-opacity="0.15" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+    </section>
   </div>
+  <div class="view" id="view-rappel">
+    <button class="back-link" data-view="view-home">← Retour à l'accueil</button>
+    <section class="reveal">
 
-  <!-- ---------- HADITH DU JOUR ---------- -->
-  <section id="rappel" class="reveal">
     <div class="section-head">
       <span class="eyebrow">Rappel quotidien</span>
       <h2>Un hadith authentique, chaque jour.</h2>
@@ -679,118 +886,13 @@
         <button class="hadith-refresh" id="hadithRefresh">Un autre rappel →</button>
       </div>
     </div>
-  </section>
-
-  <div class="divider" aria-hidden="true">
-    <svg viewBox="0 0 1180 34"><line x1="0" y1="17" x2="1180" y2="17" stroke="#0F3D3A" stroke-opacity="0.15" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+  
+    </section>
   </div>
+  <div class="view" id="view-reciters">
+    <button class="back-link" data-view="view-home">← Retour à l'accueil</button>
+    <section class="reveal">
 
-  <!-- ---------- PRODUITS ---------- -->
-  <section id="produits" class="reveal">
-    <div class="section-head">
-      <span class="eyebrow">Les outils</span>
-      <h2>Trois outils, un seul objectif : avancer.</h2>
-      <p>Clique sur un outil pour voir comment il fonctionne concrètement.</p>
-    </div>
-
-    <div class="products-grid">
-      <!-- Suivi quotidien -->
-      <button class="product-card" data-panel="panel-suivi" aria-expanded="false" aria-controls="panel-suivi">
-        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 14l2.5 2.5L16 11"/></svg></div>
-        <span class="tag">Suivi</span>
-        <h3>Mon suivi quotidien</h3>
-        <p>Coche tes lectures du jour, suis ta régularité sur la semaine et garde ta série active.</p>
-        <span class="expand-hint">Voir la démo →</span>
-      </button>
-
-      <!-- Lecture automatique -->
-      <button class="product-card" data-panel="panel-lecture" aria-expanded="false" aria-controls="panel-lecture">
-        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4V8z" fill="currentColor" stroke="none"/></svg></div>
-        <span class="tag">Audio</span>
-        <h3>Lecture automatique</h3>
-        <p>Écoute la récitation pendant que le texte défile mot par mot, pour suivre sans perdre ta place.</p>
-        <span class="expand-hint">Voir la démo →</span>
-      </button>
-
-      <!-- Session d'écoute -->
-      <button class="product-card" data-panel="panel-ecoute" aria-expanded="false" aria-controls="panel-ecoute">
-        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/></svg></div>
-        <span class="tag">Correction</span>
-        <h3 id="ecoute-titre">Session d'écoute</h3>
-        <p>Récite, et reçois un retour clair sur les points à corriger pour progresser sereinement.</p>
-        <span class="expand-hint">Voir la démo →</span>
-      </button>
-
-      <!-- Panel: suivi quotidien -->
-      <div class="panel" id="panel-suivi">
-        <h4>Mon suivi quotidien</h4>
-        <p>Une vue simple de ta semaine : les jours où tu as lu apparaissent en doré. Ta série (streak) et ton temps de lecture cumulé sont toujours visibles.</p>
-        <div class="reader-demo">
-          <div class="tracker-grid">
-            <div class="tracker-day done">L</div>
-            <div class="tracker-day done">M</div>
-            <div class="tracker-day done">M</div>
-            <div class="tracker-day">J</div>
-            <div class="tracker-day done">V</div>
-            <div class="tracker-day done">S</div>
-            <div class="tracker-day">D</div>
-          </div>
-          <div class="stat-row">
-            <div class="stat"><span class="num">12</span><span class="label">Jours de suite</span></div>
-            <div class="stat"><span class="num">3h20</span><span class="label">Cette semaine</span></div>
-            <div class="stat"><span class="num">86%</span><span class="label">Régularité du mois</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Panel: lecture automatique -->
-      <div class="panel" id="panel-lecture">
-        <h4>Lecture automatique</h4>
-        <p>Lance la lecture : chaque mot se met en surbrillance au fil de la récitation, pour garder le rythme sans effort.</p>
-        <div class="reader-demo">
-          <div class="reader-controls">
-            <button class="play-btn" id="playBtn" aria-label="Lancer la lecture automatique">
-              <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
-            </button>
-            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-            <span class="timer" id="timer">00:00 / 00:14</span>
-          </div>
-          <p class="verse-line" id="verseLine" lang="ar">
-            <span class="verse-word">بِسْمِ</span>
-            <span class="verse-word">اللَّهِ</span>
-            <span class="verse-word">الرَّحْمَٰنِ</span>
-            <span class="verse-word">الرَّحِيمِ</span>
-          </p>
-        </div>
-      </div>
-
-      <!-- Panel: session d'écoute (l'id correspond maintenant à aria-controls="panel-ecoute" du bouton) -->
-      <div class="panel" id="panel-ecoute">
-        <h4>Session d'écoute — repère tes erreurs</h4>
-        <p>Enregistre ta récitation d'un passage. La session t'indique, verset par verset, les points de tajwid à retravailler — sans jugement, juste des repères clairs pour progresser.</p>
-        <div class="listen-demo">
-          <div class="listen-card">
-            <h5>Enregistrement</h5>
-            <button class="record-btn" id="recordBtn"><span class="dot"></span> Démarrer l'enregistrement</button>
-            <p style="margin-top:14px;font-size:0.85rem;opacity:0.8;">Récite la sourate Al-Fatiha, verset 1 à 3.</p>
-          </div>
-          <div class="listen-card">
-            <h5>Retour après écoute</h5>
-            <div class="error-row"><span>Verset 1 — madd</span><span class="error-tag medd">À revoir</span></div>
-            <div class="error-row"><span>Verset 2 — makhraj</span><span class="error-tag ok">Correct</span></div>
-            <div class="error-row"><span>Verset 3 — ghunna</span><span class="error-tag medd">À revoir</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <div class="divider" aria-hidden="true">
-    <svg viewBox="0 0 1180 34"><line x1="0" y1="17" x2="1180" y2="17" stroke="#0F3D3A" stroke-opacity="0.15" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
-  </div>
-
-  <!-- ---------- RÉCITATEURS ---------- -->
-  <section id="reciters" class="reveal">
     <div class="section-head">
       <span class="eyebrow">Récitations complètes</span>
       <h2>Écoute le Coran en entier, par tes récitateurs préférés.</h2>
@@ -813,18 +915,22 @@
       <span class="mp-name" id="miniPlayerName">—</span>
       <audio id="miniPlayerAudio" controls></audio>
     </div>
-  </section>
-
-  <div class="divider" aria-hidden="true">
-    <svg viewBox="0 0 1180 34"><line x1="0" y1="17" x2="1180" y2="17" stroke="#0F3D3A" stroke-opacity="0.15" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+  
+    </section>
   </div>
+  <div class="view" id="view-coran">
+    <button class="back-link" data-view="view-home">← Retour à l'accueil</button>
+    <section class="reveal">
 
-  <!-- ---------- LE CORAN — FICHES MÉMO ---------- -->
-  <section id="coran" class="reveal">
     <div class="section-head">
       <span class="eyebrow">Le Coran en entier</span>
       <h2>Chaque verset, en arabe, avec traduction française et anglaise.</h2>
       <p>Les 114 sourates sont accessibles verset par verset, sous forme de fiches mémo, avec le texte arabe original et sa traduction.</p>
+    </div>
+    
+    <div class="resume-banner" id="resumeBanner">
+      <span id="resumeText"></span>
+      <button id="resumeBtn">Reprendre</button>
     </div>
     <div class="quran-controls">
       <select id="quranSurahSelect" aria-label="Choisir une sourate"></select>
@@ -842,66 +948,114 @@
       <span class="fc-pos" id="fcPos">—</span>
       <button id="fcNext" disabled>Suivant →</button>
     </div>
-  </section>
+  
+    </section>
+  </div>
+  <div class="view" id="view-suivi">
+    <button class="back-link" data-view="view-home">← Retour à l'accueil</button>
+    <section class="reveal">
+      <div class="section-head">
+        <span class="eyebrow">Suivi</span>
+        <h2>Mon suivi quotidien</h2>
+        <p>Un aperçu simple de ta régularité, semaine après semaine.</p>
+      </div>
+    <div class="how-it-works">
+      <div class="how-step"><span class="step-num">1</span><h4>Tu coches ta lecture du jour</h4><p>Chaque fois que tu lis, un jour de ta semaine passe au doré.</p></div>
+      <div class="how-step"><span class="step-num">2</span><h4>Ta série se construit</h4><p>Le compteur de jours consécutifs t'encourage à garder le rythme.</p></div>
+      <div class="how-step"><span class="step-num">3</span><h4>Tu vois ta régularité</h4><p>Un pourcentage mensuel te montre ta progression dans le temps.</p></div>
+    </div>
 
-  <div class="divider" aria-hidden="true">
-    <svg viewBox="0 0 1180 34"><line x1="0" y1="17" x2="1180" y2="17" stroke="#0F3D3A" stroke-opacity="0.15" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+      <div class="demo-card">
+<h4>Mon suivi quotidien</h4>
+        <p>Une vue simple de ta semaine : les jours où tu as lu apparaissent en doré. Ta série (streak) et ton temps de lecture cumulé sont toujours visibles.</p>
+        <div class="reader-demo">
+          <div class="tracker-grid">
+            <div class="tracker-day done">L</div>
+            <div class="tracker-day done">M</div>
+            <div class="tracker-day done">M</div>
+            <div class="tracker-day">J</div>
+            <div class="tracker-day done">V</div>
+            <div class="tracker-day done">S</div>
+            <div class="tracker-day">D</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat"><span class="num">12</span><span class="label">Jours de suite</span></div>
+            <div class="stat"><span class="num">3h20</span><span class="label">Cette semaine</span></div>
+            <div class="stat"><span class="num">86%</span><span class="label">Régularité du mois</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="view" id="view-lecture">
+    <button class="back-link" data-view="view-home">← Retour à l'accueil</button>
+    <section class="reveal">
+      <div class="section-head">
+        <span class="eyebrow">Audio</span>
+        <h2>Lecture automatique</h2>
+        <p>Le texte défile en même temps que la récitation, verset par verset.</p>
+      </div>
+    <div class="how-it-works">
+      <div class="how-step"><span class="step-num">1</span><h4>Tu choisis un verset</h4><p>Le texte arabe s'affiche, prêt à être suivi mot par mot.</p></div>
+      <div class="how-step"><span class="step-num">2</span><h4>Tu lances la lecture</h4><p>Chaque mot se met en surbrillance au fil de la récitation.</p></div>
+      <div class="how-step"><span class="step-num">3</span><h4>Tu suis sans effort</h4><p>Plus besoin de chercher où tu en es dans le texte.</p></div>
+    </div>
+
+      <div class="demo-card">
+<h4>Lecture automatique</h4>
+        <p>Lance la lecture : chaque mot se met en surbrillance au fil de la récitation, pour garder le rythme sans effort.</p>
+        <div class="reader-demo">
+          <div class="reader-controls">
+            <button class="play-btn" id="playBtn" aria-label="Lancer la lecture automatique">
+              <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+            </button>
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+            <span class="timer" id="timer">00:00 / 00:14</span>
+          </div>
+          <p class="verse-line" id="verseLine" lang="ar">
+            <span class="verse-word">بِسْمِ</span>
+            <span class="verse-word">اللَّهِ</span>
+            <span class="verse-word">الرَّحْمَٰنِ</span>
+            <span class="verse-word">الرَّحِيمِ</span>
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="view" id="view-ecoute">
+    <button class="back-link" data-view="view-home">← Retour à l'accueil</button>
+    <section class="reveal">
+      <div class="section-head">
+        <span class="eyebrow">Correction</span>
+        <h2>Session d'écoute</h2>
+        <p>Un retour clair sur ta récitation, pour corriger tes erreurs de tajwid.</p>
+      </div>
+    <div class="how-it-works">
+      <div class="how-step"><span class="step-num">1</span><h4>Tu récites</h4><p>Tu enregistres ta lecture d'un passage, à ton rythme.</p></div>
+      <div class="how-step"><span class="step-num">2</span><h4>Ta récitation est analysée</h4><p>Verset par verset, les points de tajwid à retravailler sont repérés.</p></div>
+      <div class="how-step"><span class="step-num">3</span><h4>Tu progresses</h4><p>Des repères clairs, sans jugement, pour t'améliorer sereinement.</p></div>
+    </div>
+
+      <div class="demo-card">
+<h4>Session d'écoute — repère tes erreurs</h4>
+        <p>Enregistre ta récitation d'un passage. La session t'indique, verset par verset, les points de tajwid à retravailler — sans jugement, juste des repères clairs pour progresser.</p>
+        <div class="listen-demo">
+          <div class="listen-card">
+            <h5>Enregistrement</h5>
+            <button class="record-btn" id="recordBtn"><span class="dot"></span> Démarrer l'enregistrement</button>
+            <p style="margin-top:14px;font-size:0.85rem;opacity:0.8;">Récite la sourate Al-Fatiha, verset 1 à 3.</p>
+          </div>
+          <div class="listen-card">
+            <h5>Retour après écoute</h5>
+            <div class="error-row"><span>Verset 1 — madd</span><span class="error-tag medd">À revoir</span></div>
+            <div class="error-row"><span>Verset 2 — makhraj</span><span class="error-tag ok">Correct</span></div>
+            <div class="error-row"><span>Verset 3 — ghunna</span><span class="error-tag medd">À revoir</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <!-- ---------- TARIFS ---------- -->
-  <section id="tarifs" class="reveal">
-    <div class="section-head">
-      <span class="eyebrow">Tarifs</span>
-      <h2>Commence gratuitement, avance plus loin avec Premium.</h2>
-      <p>Change de formule à tout moment, sans engagement.</p>
-    </div>
-    <div class="pricing-grid">
-      <div class="price-card">
-        <h3>Gratuit</h3>
-        <div class="price">0€ <span>/ toujours</span></div>
-        <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Suivi quotidien de base</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Lecture automatique (3 sourates)</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>1 session d'écoute par semaine</li>
-        </ul>
-        <a href="#" class="btn btn-ghost" id="startFree">Commencer gratuitement</a>
-      </div>
-      <div class="price-card premium">
-        <h3>Premium</h3>
-        <div class="price mono">7,99€ <span>/ mois</span></div>
-        <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Suivi quotidien avancé + rappels</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Lecture automatique illimitée</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Sessions d'écoute illimitées</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Statistiques détaillées de progression</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Accès hors-ligne</li>
-        </ul>
-        <button class="btn btn-gold" id="openLoginPremium">Passer à Premium</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ---------- FAQ ---------- -->
-  <section id="faq" class="reveal">
-    <div class="section-head">
-      <span class="eyebrow">Questions fréquentes</span>
-      <h2>Ce qu'on te demande le plus souvent.</h2>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;">
-      <details style="background:#fff;padding:20px 24px;">
-        <summary style="cursor:pointer;font-weight:500;">La session d'écoute enregistre-t-elle ma voix en permanence ?</summary>
-        <p style="color:var(--ink-soft);margin-top:10px;font-size:0.92rem;">Non. L'enregistrement démarre uniquement quand tu appuies sur le bouton, et s'arrête à ta demande.</p>
-      </details>
-      <details style="background:#fff;padding:20px 24px;">
-        <summary style="cursor:pointer;font-weight:500;">Puis-je annuler mon abonnement Premium à tout moment ?</summary>
-        <p style="color:var(--ink-soft);margin-top:10px;font-size:0.92rem;">Oui, sans engagement ni frais cachés, directement depuis les paramètres de ton compte.</p>
-      </details>
-      <details style="background:#fff;padding:20px 24px;">
-        <summary style="cursor:pointer;font-weight:500;">Mes données de progression sont-elles privées ?</summary>
-        <p style="color:var(--ink-soft);margin-top:10px;font-size:0.92rem;">Oui, ton suivi et tes enregistrements ne sont visibles que par toi.</p>
-      </details>
-    </div>
-  </section>
 
 </main>
 
@@ -917,18 +1071,18 @@
     <div class="cols">
       <div class="col">
         <h6>Produit</h6>
-        <a href="#produits">Suivi quotidien</a>
-        <a href="#produits">Lecture automatique</a>
-        <a href="#ecoute">Session d'écoute</a>
+        <a href="#" data-view="view-suivi">Suivi quotidien</a>
+        <a href="#" data-view="view-lecture">Lecture automatique</a>
+        <a href="#" data-view="view-ecoute">Session d'écoute</a>
       </div>
       <div class="col">
         <h6>Compte</h6>
         <a href="#" id="footerLogin">Se connecter</a>
-        <a href="#tarifs">Tarifs</a>
+        <a href="#" data-view="view-home" data-scroll-to="tarifs">Tarifs</a>
       </div>
       <div class="col">
         <h6>À propos</h6>
-        <a href="#faq">Questions</a>
+        <a href="#" data-view="view-home" data-scroll-to="faq">Questions</a>
         <a href="#">Contact</a>
       </div>
     </div>
@@ -1019,19 +1173,37 @@
     }
   });
 
-  // ----- Panels produits -----
-  document.querySelectorAll('.product-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const panel = document.getElementById(card.dataset.panel);
-      const isOpen = panel.classList.contains('open');
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
-      document.querySelectorAll('.product-card').forEach(c => c.setAttribute('aria-expanded','false'));
-      if(!isOpen){
-        panel.classList.add('open');
-        card.setAttribute('aria-expanded','true');
-        panel.scrollIntoView({behavior:'smooth', block:'nearest'});
-      }
+  // ----- Navigation SPA (vues par onglets) -----
+  function showView(id, scrollToId){
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const target = document.getElementById(id);
+    if(target) target.classList.add('active');
+    document.querySelectorAll('.nav-link').forEach(b => b.classList.toggle('active', b.dataset.view === id));
+    if(scrollToId){
+      requestAnimationFrame(() => {
+        const el = document.getElementById(scrollToId);
+        if(el) el.scrollIntoView({behavior:'smooth'});
+      });
+    } else {
+      window.scrollTo({top:0, behavior:'auto'});
+    }
+    if(history.replaceState){
+      history.replaceState(null, '', id === 'view-home' ? location.pathname : '#' + id.replace('view-',''));
+    }
+  }
+  document.querySelectorAll('[data-view]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      showView(el.dataset.view, el.dataset.scrollTo);
     });
+  });
+  // Ouvre directement une vue si l'URL contient un lien du type #priere
+  window.addEventListener('DOMContentLoaded', () => {
+    const hash = location.hash.replace('#', '');
+    if(hash){
+      const target = document.getElementById('view-' + hash);
+      if(target) showView('view-' + hash);
+    }
   });
 
   // ----- Démo lecture automatique -----
@@ -1090,9 +1262,6 @@
     overlay.classList.add('open');
     document.getElementById('emailInput').focus();
   }));
-  premiumBtn?.addEventListener('click', (e) => {
-    if(isLoggedIn) return; // laisse l'ancre #tarifs faire son travail normalement
-  });
   document.getElementById('closeLogin').addEventListener('click', () => overlay.classList.remove('open'));
   overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('open'); });
   document.addEventListener('keydown', (e) => { if(e.key === 'Escape') overlay.classList.remove('open'); });
@@ -1172,9 +1341,12 @@
   const fcNext = document.getElementById('fcNext');
   const quranStatus = document.getElementById('quranStatus');
 
+  let currentSurahNumber = null;
+
   async function loadSurahFlashcards(){
     const n = document.getElementById('quranSurahSelect').value;
     if(!n) return;
+    currentSurahNumber = n;
     quranStatus.textContent = 'Chargement de la sourate…';
     try{
       const res = await fetch(`https://api.alquran.cloud/v1/surah/${n}/editions/quran-uthmani,fr.hamidullah,en.sahih`);
@@ -1204,6 +1376,29 @@
     fcPos.textContent = (currentAyahIndex + 1) + ' / ' + currentAyahs.length;
     fcPrev.disabled = currentAyahIndex === 0;
     fcNext.disabled = currentAyahIndex === currentAyahs.length - 1;
+    try{
+      localStorage.setItem('rihla_quran_progress', JSON.stringify({ surah: currentSurahNumber, ayah: currentAyahIndex }));
+    }catch(err){ /* stockage indisponible, tant pis */ }
+  }
+
+  function initQuranResumeBanner(){
+    try{
+      const saved = JSON.parse(localStorage.getItem('rihla_quran_progress'));
+      if(!saved || !saved.surah) return;
+      const banner = document.getElementById('resumeBanner');
+      const resumeText = document.getElementById('resumeText');
+      if(!banner || !resumeText) return;
+      const surahMeta = SURAHS.find(s => s.number === Number(saved.surah));
+      const surahLabel = surahMeta ? `${surahMeta.number}. ${surahMeta.englishName}` : `sourate ${saved.surah}`;
+      resumeText.textContent = `Tu t'étais arrêté à ${surahLabel}, verset ${saved.ayah + 1}.`;
+      banner.classList.add('visible');
+      document.getElementById('resumeBtn').addEventListener('click', async () => {
+        document.getElementById('quranSurahSelect').value = saved.surah;
+        await loadSurahFlashcards();
+        currentAyahIndex = Math.min(saved.ayah, currentAyahs.length - 1);
+        renderFlashcard();
+      });
+    }catch(err){ /* rien de sauvegardé, ou stockage indisponible */ }
   }
 
   document.getElementById('quranLoadBtn').addEventListener('click', loadSurahFlashcards);
@@ -1711,12 +1906,11 @@
     miniPlayerAudio = document.getElementById('miniPlayerAudio');
     miniPlayerName = document.getElementById('miniPlayerName');
 
-    loadSurahList();
+    loadSurahList().then(initQuranResumeBanner);
     loadReciters();
     loadDailyHadith(false);
     locateAndInitPrayers();
   });
 </script>
-
 </body>
 </html>
