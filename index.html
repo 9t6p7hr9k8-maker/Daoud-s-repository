@@ -370,6 +370,11 @@
     padding:12px 14px; border-radius:10px; border:1px solid var(--line); font-family:inherit; font-size:0.92rem;
   }
   .auth-email input:focus{border-color:var(--emerald-950);}
+  .auth-toggle-mode{
+    background:none; border:none; color:var(--emerald-600); font-size:0.82rem; text-decoration:underline;
+    padding:2px 0; margin-top:6px; align-self:flex-start;
+  }
+  .auth-toggle-mode:hover{color:var(--emerald-950);}
   .modal-note{margin-top:16px; font-size:0.76rem; color:var(--ink-soft); line-height:1.5;}
   .auth-status{margin-top:10px; font-size:0.82rem; min-height:1.2em;}
   .auth-status.error{color:#a33;}
@@ -1107,11 +1112,14 @@
     <div class="auth-divider">ou avec un e-mail</div>
     <form class="auth-email" id="emailForm">
       <label for="emailInput" style="font-size:0.85rem;color:var(--ink-soft);">Adresse e-mail</label>
-      <input type="email" id="emailInput" placeholder="toi@exemple.com" required>
-      <button type="submit" class="btn btn-primary" style="margin-top:4px;">Recevoir un lien de connexion</button>
+      <input type="email" id="emailInput" placeholder="toi@exemple.com" autocomplete="email" required>
+      <label for="passwordInput" style="font-size:0.85rem;color:var(--ink-soft);">Mot de passe</label>
+      <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password" minlength="6" required>
+      <button type="submit" class="btn btn-primary" id="authSubmitBtn" style="margin-top:4px;">Se connecter</button>
       <p class="auth-status" id="authStatus"></p>
+      <button type="button" class="auth-toggle-mode" id="authToggleMode">Pas encore de compte ? Crée-en un</button>
     </form>
-    <p class="modal-note">Connexion réelle via Supabase (Google ou lien magique par e-mail). Pense à activer le fournisseur Google dans ton tableau de bord Supabase pour que ce bouton fonctionne.</p>
+    <p class="modal-note">Connexion réelle via Supabase (Google, ou e-mail + mot de passe).</p>
   </div>
 </div>
 
@@ -1279,23 +1287,63 @@
     // En cas de succès, Supabase redirige vers Google puis revient sur cette page.
   });
 
+  // ----- Connexion / inscription par e-mail + mot de passe -----
+  let authMode = 'signin'; // 'signin' ou 'signup'
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+  const authToggleMode = document.getElementById('authToggleMode');
+
+  function setAuthMode(mode){
+    authMode = mode;
+    if(mode === 'signup'){
+      authSubmitBtn.textContent = 'Créer mon compte';
+      authToggleMode.textContent = 'Déjà un compte ? Connecte-toi';
+    } else {
+      authSubmitBtn.textContent = 'Se connecter';
+      authToggleMode.textContent = 'Pas encore de compte ? Crée-en un';
+    }
+    authStatus.textContent = '';
+    authStatus.className = 'auth-status';
+  }
+  authToggleMode.addEventListener('click', () => setAuthMode(authMode === 'signin' ? 'signup' : 'signin'));
+
   document.getElementById('emailForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('emailInput').value.trim();
-    if(!email) return;
-    authStatus.textContent = 'Envoi du lien en cours…';
-    authStatus.className = 'auth-status';
-    const { error } = await supabaseClient.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin + window.location.pathname }
-    });
-    if(error){
-      authStatus.textContent = 'Erreur : ' + error.message;
-      authStatus.className = 'auth-status error';
+    const password = document.getElementById('passwordInput').value;
+    if(!email || !password) return;
+    authSubmitBtn.disabled = true;
+
+    if(authMode === 'signup'){
+      authStatus.textContent = 'Création du compte en cours…';
+      authStatus.className = 'auth-status';
+      const { data, error } = await supabaseClient.auth.signUp({
+        email, password,
+        options: { emailRedirectTo: window.location.origin + window.location.pathname }
+      });
+      if(error){
+        authStatus.textContent = 'Erreur : ' + error.message;
+        authStatus.className = 'auth-status error';
+      } else if(data.session){
+        // Confirmation par e-mail désactivée côté Supabase : la session démarre tout de suite.
+        authStatus.textContent = 'Compte créé ! Connexion en cours…';
+        authStatus.className = 'auth-status ok';
+      } else {
+        authStatus.textContent = 'Compte créé — vérifie ta boîte mail pour confirmer ton adresse avant de te connecter.';
+        authStatus.className = 'auth-status ok';
+      }
     } else {
-      authStatus.textContent = 'Lien de connexion envoyé à ' + email + '. Vérifie ta boîte mail.';
-      authStatus.className = 'auth-status ok';
+      authStatus.textContent = 'Connexion en cours…';
+      authStatus.className = 'auth-status';
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if(error){
+        authStatus.textContent = error.message.includes('Invalid login')
+          ? 'E-mail ou mot de passe incorrect.'
+          : 'Erreur : ' + error.message;
+        authStatus.className = 'auth-status error';
+      }
+      // En cas de succès, onAuthStateChange (plus haut) ferme la modale et affiche l'utilisateur connecté.
     }
+    authSubmitBtn.disabled = false;
   });
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
