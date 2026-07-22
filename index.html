@@ -290,6 +290,10 @@
   .record-btn.recording{background:#c0392b;}
   #detectionResult .detect-surah{font-family:'Amiri',serif; color:var(--gold-300); font-size:1.1rem; margin:0 0 6px;}
   #detectionResult .detect-note{font-size:0.8rem; opacity:0.75; line-height:1.5;}
+  #detectionResult .detect-live{
+    display:inline-flex; align-items:center; gap:5px; font-size:0.72rem; color:#e0736b;
+    text-transform:uppercase; letter-spacing:0.04em; margin:0 0 8px; font-family:'IBM Plex Mono',monospace;
+  }
   .transcript-compare{
     display:none; background:#fff; border:1px solid var(--line); border-radius:var(--radius);
     padding:26px; margin-top:24px;
@@ -852,7 +856,8 @@
     <div class="section-head">
       <span class="eyebrow">Horaires &amp; Qibla</span>
       <h2>Les cinq prières, où que tu sois.</h2>
-      <p> "La Salât demeure, pour les croyants, une prescription à des temps déterminés". (Qur'an 04:113)</p>
+      <p>"La Salât demeure, pour les croyants, une prescription à des temps déterminés". (Qur'an 04:113)</p>
+
     </div>
     <div class="prayer-shell">
       <div class="prayer-times-card">
@@ -1376,28 +1381,51 @@
     transcriptCompare.classList.add('visible');
   }
 
+  function renderDetectionUI(match, { live }){
+    if(!match){
+      detectionResult.innerHTML = `<p class="detect-note">${live ? 'Écoute en cours…' : "Aucun verset n'a pu être identifié avec confiance à partir de ce qui a été reconnu. Essaie de réciter plus lentement et distinctement, plus près du micro."}</p>`;
+      if(!live) transcriptCompare.classList.remove('visible');
+      return;
+    }
+    const { entry, score } = match;
+    const confidence = score >= 0.6 ? 'assez fiable' : 'incertaine';
+    detectionResult.innerHTML = `
+      ${live ? '<p class="detect-live">● en direct</p>' : ''}
+      <p class="detect-surah">${entry.surahNumber}. ${entry.surahName} — verset ${entry.ayahNumber}</p>
+      <p class="detect-note">Correspondance ${confidence} (${Math.round(score*100)}% des mots du verset retrouvés).</p>
+    `;
+  }
+
+  // On ne compare pas tout l'enregistrement d'un coup : on ne garde qu'une fenêtre des
+  // derniers mots reconnus, pour que la détection "suive" la personne verset après verset
+  // au lieu de rester bloquée sur le tout premier verset récité.
+  const LIVE_WORD_WINDOW = 22;
+  let recentWordsBuffer = [];
+
+  function updateLiveDetection(){
+    if(!fullQuranFlat) return; // le Coran n'est pas encore chargé en mémoire
+    const windowText = recentWordsBuffer.slice(-LIVE_WORD_WINDOW).join(' ');
+    if(!windowText.trim()) return;
+    const match = findBestMatchingAyah(windowText, fullQuranFlat);
+    renderDetectionUI(match, { live: true });
+    if(match) renderComparison(match.entry, windowText);
+  }
+
   async function runDetection(){
     if(!liveTranscript.trim()){
       detectionResult.innerHTML = `<p class="detect-note">Aucun texte n'a pu être reconnu pendant l'enregistrement${!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) ? " — ton navigateur ne supporte pas la reconnaissance vocale (essaie Chrome sur ordinateur ou Android)" : ''}. L'enregistrement audio reste disponible ci-contre.</p>`;
       transcriptCompare.classList.remove('visible');
       return;
     }
-    detectionResult.innerHTML = `<p class="detect-note">Recherche du verset le plus proche…</p>`;
     try{
       const flat = await loadFullQuranFlat();
-      const match = findBestMatchingAyah(liveTranscript, flat);
-      if(!match){
-        detectionResult.innerHTML = `<p class="detect-note">Aucun verset n'a pu être identifié avec confiance à partir de ce qui a été reconnu ("${liveTranscript.trim()}"). Essaie de réciter plus lentement et distinctement, plus près du micro.</p>`;
-        transcriptCompare.classList.remove('visible');
-        return;
-      }
-      const { entry, score } = match;
-      const confidence = score >= 0.6 ? 'assez fiable' : 'incertaine — à prendre avec précaution';
-      detectionResult.innerHTML = `
-        <p class="detect-surah">${entry.surahNumber}. ${entry.surahName} — verset ${entry.ayahNumber}</p>
-        <p class="detect-note">Correspondance ${confidence} (${Math.round(score*100)}% des mots du verset retrouvés dans ta lecture reconnue).</p>
-      `;
-      renderComparison(entry, liveTranscript);
+      // au moment de l'arrêt, on affiche le dernier passage récité (fenêtre récente),
+      // pas la moyenne de tout l'enregistrement qui peut mélanger plusieurs versets.
+      const windowText = recentWordsBuffer.slice(-LIVE_WORD_WINDOW).join(' ') || liveTranscript;
+      const match = findBestMatchingAyah(windowText, flat);
+      renderDetectionUI(match, { live: false });
+      if(match) renderComparison(match.entry, windowText);
+      else transcriptCompare.classList.remove('visible');
     }catch(err){
       detectionResult.innerHTML = `<p class="detect-note">Impossible de comparer avec le texte du Coran pour le moment — réessaie.</p>`;
     }
@@ -1406,6 +1434,7 @@
   function startLiveSpeechRecognition(){
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     liveTranscript = '';
+    recentWordsBuffer = [];
     if(!SR) return null;
     const recognizer = new SR();
     recognizer.lang = 'ar-SA';
@@ -1417,6 +1446,9 @@
         if(event.results[i].isFinal) finalText += event.results[i][0].transcript + ' ';
       }
       liveTranscript = finalText;
+      const words = normalizeArabic(finalText).split(' ').filter(Boolean);
+      recentWordsBuffer = words; // "finalText" contient déjà tout le cumul, on repart de zéro à chaque event
+      updateLiveDetection();
     };
     recognizer.onerror = () => { /* on garde ce qui a déjà été transcrit, silencieusement */ };
     try{ recognizer.start(); }catch(err){ return null; }
@@ -1434,6 +1466,7 @@
       recordStatus.textContent = "Accès au micro refusé ou indisponible — autorise le micro dans les réglages de ton navigateur pour enregistrer.";
       return;
     }
+    loadFullQuranFlat().catch(() => {}); // précharge le Coran en tâche de fond dès le début
     recordedChunks = [];
     const mimeCandidates = ['audio/webm', 'audio/mp4', 'audio/ogg'];
     const supportedMime = mimeCandidates.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m));
@@ -1465,7 +1498,7 @@
     recordBtn.classList.add('recording');
     recordBtn.innerHTML = '<span class="dot"></span> Arrêter l\'enregistrement';
     recordStatus.textContent = speechRecognizer
-      ? 'Enregistrement en cours — récite distinctement, près du micro.'
+      ? 'Enregistrement en cours — la détection se met à jour en direct pendant que tu récites.'
       : "Enregistrement en cours (reconnaissance vocale indisponible sur ce navigateur : seul l'audio sera enregistré).";
   }
 
