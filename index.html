@@ -274,6 +274,34 @@
   .listen-card h5{margin:0 0 10px; font-size:0.85rem; letter-spacing:0.04em; text-transform:uppercase; color:var(--gold-300); font-weight:500;}
   .error-row{display:flex; justify-content:space-between; font-size:0.88rem; padding:7px 0; border-bottom:1px solid rgba(247,243,232,0.1);}
   .error-row:last-child{border-bottom:none;}
+  .listen-disclaimer{
+    background:var(--sand); border-radius:8px; padding:10px 14px; font-size:0.8rem;
+    color:var(--ink-soft); line-height:1.5; margin:0 0 20px;
+  }
+  .record-timer{
+    display:none; font-family:'IBM Plex Mono', monospace; font-size:1.3rem; color:var(--gold-300);
+    margin-top:14px;
+  }
+  .record-timer.visible{display:block;}
+  .record-player{display:none; flex-direction:column; gap:10px; margin-top:14px;}
+  .record-player.visible{display:flex;}
+  .record-player audio{width:100%;}
+  .record-status{margin-top:14px; font-size:0.85rem; opacity:0.85;}
+  .record-btn.recording{background:#c0392b;}
+  #detectionResult .detect-surah{font-family:'Amiri',serif; color:var(--gold-300); font-size:1.1rem; margin:0 0 6px;}
+  #detectionResult .detect-note{font-size:0.8rem; opacity:0.75; line-height:1.5;}
+  .transcript-compare{
+    display:none; background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+    padding:26px; margin-top:24px;
+  }
+  .transcript-compare.visible{display:block;}
+  .transcript-compare h5{margin:0 0 14px; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--emerald-600);}
+  .transcript-compare .fc-arabic{background:none; border:none; padding:0; margin:0 0 14px;}
+  .cw-match{background:rgba(120,200,150,0.25); border-radius:4px; padding:1px 3px;}
+  .cw-miss{background:rgba(201,162,39,0.25); border-radius:4px; padding:1px 3px;}
+  .compare-legend{font-size:0.78rem; color:var(--ink-soft); direction:ltr; text-align:left;}
+  .compare-legend .cw-match, .compare-legend .cw-miss{padding:2px 8px;}
+
   .error-tag{font-family:'IBM Plex Mono', monospace; font-size:0.72rem; padding:2px 8px; border-radius:999px;}
   .error-tag.medd{background:rgba(201,162,39,0.2); color:var(--gold-300);}
   .error-tag.ok{background:rgba(120,200,150,0.15); color:#9fdcb5;}
@@ -1042,20 +1070,31 @@
     </div>
 
       <div class="demo-card">
-<h4>Session d'écoute — repère tes erreurs</h4>
-        <p>Enregistre ta récitation d'un passage. La session t'indique, verset par verset, les points de tajwid à retravailler — sans jugement, juste des repères clairs pour progresser.</p>
+<h4>Session d'écoute</h4>
+        <p>Enregistre ta récitation avec le micro de ton appareil. Le site tente de reconnaître automatiquement le verset récité et le compare au texte du Coran.</p>
+        <p class="listen-disclaimer">⚠️ Ceci reste indicatif : la reconnaissance vocale n'est pas conçue pour la récitation coranique classique, et la comparaison ci-dessous porte sur le <strong>texte reconnu</strong>, pas sur ta prononciation — ce n'est pas une analyse de tajwid.</p>
         <div class="listen-demo">
           <div class="listen-card">
             <h5>Enregistrement</h5>
             <button class="record-btn" id="recordBtn"><span class="dot"></span> Démarrer l'enregistrement</button>
-            <p style="margin-top:14px;font-size:0.85rem;opacity:0.8;">Récite la sourate Al-Fatiha, verset 1 à 3.</p>
+            <div class="record-timer" id="recordTimer">00:00</div>
+            <div class="record-player" id="recordPlayer">
+              <audio controls id="recordAudio"></audio>
+              <button class="btn btn-ghost" id="recordAgainBtn">Recommencer</button>
+            </div>
+            <p class="record-status" id="recordStatus">Appuie pour démarrer — ton navigateur va demander l'accès au micro.</p>
           </div>
           <div class="listen-card">
-            <h5>Retour après écoute</h5>
-            <div class="error-row"><span>Verset 1 — madd</span><span class="error-tag medd">À revoir</span></div>
-            <div class="error-row"><span>Verset 2 — makhraj</span><span class="error-tag ok">Correct</span></div>
-            <div class="error-row"><span>Verset 3 — ghunna</span><span class="error-tag medd">À revoir</span></div>
+            <h5>Verset détecté</h5>
+            <div id="detectionResult">
+              <p style="opacity:.7;font-size:0.85rem;">Lance un enregistrement pour voir le résultat ici.</p>
+            </div>
           </div>
+        </div>
+        <div class="transcript-compare" id="transcriptCompare">
+          <h5>Comparaison avec le texte du verset</h5>
+          <p class="fc-arabic" id="compareWords" lang="ar" dir="rtl"></p>
+          <p class="compare-legend"><span class="cw-match">mot reconnu</span> · <span class="cw-miss">mot non reconnu dans ta lecture</span></p>
         </div>
       </div>
     </section>
@@ -1246,13 +1285,213 @@
     }, 900);
   });
 
-  // ----- Démo enregistrement -----
+  /* =====================================================================
+     SESSION D'ÉCOUTE — enregistrement micro réel + détection de sourate
+     en "meilleur effort" (reconnaissance vocale du navigateur, quand elle
+     est disponible) + comparaison textuelle indicative avec le Coran.
+     Ce n'est PAS une analyse de tajwid : on ne détecte pas la prononciation,
+     seulement les mots que la reconnaissance vocale a réussi à transcrire.
+  ===================================================================== */
   const recordBtn = document.getElementById('recordBtn');
+  const recordTimer = document.getElementById('recordTimer');
+  const recordPlayer = document.getElementById('recordPlayer');
+  const recordAudio = document.getElementById('recordAudio');
+  const recordStatus = document.getElementById('recordStatus');
+  const detectionResult = document.getElementById('detectionResult');
+  const transcriptCompare = document.getElementById('transcriptCompare');
+  const compareWords = document.getElementById('compareWords');
+
+  let mediaRecorder = null;
+  let mediaStream = null;
+  let recordedChunks = [];
+  let recordTimerInterval = null;
+  let recordSeconds = 0;
+  let speechRecognizer = null;
+  let liveTranscript = '';
+  let fullQuranFlat = null; // rempli au premier enregistrement : [{surahNumber, surahName, ayahNumber, textRaw, textNormalized, words}]
+
+  function formatTimer(s){
+    const mm = String(Math.floor(s / 60)).padStart(2,'0');
+    const ss = String(s % 60).padStart(2,'0');
+    return `${mm}:${ss}`;
+  }
+
+  function normalizeArabic(text){
+    return (text || '')
+      .replace(/[\u064B-\u0652\u0670\u0640]/g, '') // tachkîl + tatwîl
+      .replace(/[إأآا]/g, 'ا')
+      .replace(/ى/g, 'ي')
+      .replace(/ة/g, 'ه')
+      .replace(/ؤ/g, 'و')
+      .replace(/ئ/g, 'ي')
+      .replace(/[^\u0600-\u06FF\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  async function loadFullQuranFlat(){
+    if(fullQuranFlat) return fullQuranFlat;
+    const res = await fetch('https://api.alquran.cloud/v1/quran/quran-uthmani');
+    const json = await res.json();
+    const flat = [];
+    (json.data.surahs || []).forEach(s => {
+      s.ayahs.forEach(a => {
+        const normalized = normalizeArabic(a.text);
+        flat.push({
+          surahNumber: s.number,
+          surahName: s.englishName,
+          surahArabicName: s.name,
+          ayahNumber: a.numberInSurah,
+          textRaw: a.text,
+          words: normalized.split(' ').filter(Boolean)
+        });
+      });
+    });
+    fullQuranFlat = flat;
+    return flat;
+  }
+
+  function findBestMatchingAyah(transcript, flat){
+    const transcriptWords = new Set(normalizeArabic(transcript).split(' ').filter(Boolean));
+    if(!transcriptWords.size) return null;
+    let best = null, bestScore = 0;
+    flat.forEach(entry => {
+      if(!entry.words.length) return;
+      let hits = 0;
+      entry.words.forEach(w => { if(transcriptWords.has(w)) hits++; });
+      const score = hits / entry.words.length;
+      if(score > bestScore){ bestScore = score; best = entry; }
+    });
+    return best && bestScore >= 0.3 ? { entry: best, score: bestScore } : null;
+  }
+
+  function renderComparison(entry, transcript){
+    const transcriptWords = new Set(normalizeArabic(transcript).split(' ').filter(Boolean));
+    const originalWords = entry.textRaw.split(' ');
+    compareWords.innerHTML = originalWords.map(w => {
+      const norm = normalizeArabic(w);
+      const cls = norm && transcriptWords.has(norm) ? 'cw-match' : 'cw-miss';
+      return `<span class="${cls}">${w}</span>`;
+    }).join(' ');
+    transcriptCompare.classList.add('visible');
+  }
+
+  async function runDetection(){
+    if(!liveTranscript.trim()){
+      detectionResult.innerHTML = `<p class="detect-note">Aucun texte n'a pu être reconnu pendant l'enregistrement${!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) ? " — ton navigateur ne supporte pas la reconnaissance vocale (essaie Chrome sur ordinateur ou Android)" : ''}. L'enregistrement audio reste disponible ci-contre.</p>`;
+      transcriptCompare.classList.remove('visible');
+      return;
+    }
+    detectionResult.innerHTML = `<p class="detect-note">Recherche du verset le plus proche…</p>`;
+    try{
+      const flat = await loadFullQuranFlat();
+      const match = findBestMatchingAyah(liveTranscript, flat);
+      if(!match){
+        detectionResult.innerHTML = `<p class="detect-note">Aucun verset n'a pu être identifié avec confiance à partir de ce qui a été reconnu ("${liveTranscript.trim()}"). Essaie de réciter plus lentement et distinctement, plus près du micro.</p>`;
+        transcriptCompare.classList.remove('visible');
+        return;
+      }
+      const { entry, score } = match;
+      const confidence = score >= 0.6 ? 'assez fiable' : 'incertaine — à prendre avec précaution';
+      detectionResult.innerHTML = `
+        <p class="detect-surah">${entry.surahNumber}. ${entry.surahName} — verset ${entry.ayahNumber}</p>
+        <p class="detect-note">Correspondance ${confidence} (${Math.round(score*100)}% des mots du verset retrouvés dans ta lecture reconnue).</p>
+      `;
+      renderComparison(entry, liveTranscript);
+    }catch(err){
+      detectionResult.innerHTML = `<p class="detect-note">Impossible de comparer avec le texte du Coran pour le moment — réessaie.</p>`;
+    }
+  }
+
+  function startLiveSpeechRecognition(){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    liveTranscript = '';
+    if(!SR) return null;
+    const recognizer = new SR();
+    recognizer.lang = 'ar-SA';
+    recognizer.continuous = true;
+    recognizer.interimResults = true;
+    recognizer.onresult = (event) => {
+      let finalText = '';
+      for(let i = 0; i < event.results.length; i++){
+        if(event.results[i].isFinal) finalText += event.results[i][0].transcript + ' ';
+      }
+      liveTranscript = finalText;
+    };
+    recognizer.onerror = () => { /* on garde ce qui a déjà été transcrit, silencieusement */ };
+    try{ recognizer.start(); }catch(err){ return null; }
+    return recognizer;
+  }
+
+  async function startRecording(){
+    detectionResult.innerHTML = `<p style="opacity:.7;font-size:0.85rem;">Lance un enregistrement pour voir le résultat ici.</p>`;
+    transcriptCompare.classList.remove('visible');
+    recordPlayer.classList.remove('visible');
+    recordStatus.textContent = "Demande d'accès au micro…";
+    try{
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }catch(err){
+      recordStatus.textContent = "Accès au micro refusé ou indisponible — autorise le micro dans les réglages de ton navigateur pour enregistrer.";
+      return;
+    }
+    recordedChunks = [];
+    const mimeCandidates = ['audio/webm', 'audio/mp4', 'audio/ogg'];
+    const supportedMime = mimeCandidates.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m));
+    try{
+      mediaRecorder = supportedMime ? new MediaRecorder(mediaStream, { mimeType: supportedMime }) : new MediaRecorder(mediaStream);
+    }catch(err){
+      recordStatus.textContent = "Ton navigateur ne permet pas l'enregistrement audio.";
+      mediaStream.getTracks().forEach(t => t.stop());
+      return;
+    }
+    mediaRecorder.ondataavailable = (e) => { if(e.data && e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      recordAudio.src = URL.createObjectURL(blob);
+      recordPlayer.classList.add('visible');
+      mediaStream.getTracks().forEach(t => t.stop());
+    };
+    mediaRecorder.start();
+    speechRecognizer = startLiveSpeechRecognition();
+
+    recordSeconds = 0;
+    recordTimer.textContent = '00:00';
+    recordTimer.classList.add('visible');
+    recordTimerInterval = setInterval(() => {
+      recordSeconds++;
+      recordTimer.textContent = formatTimer(recordSeconds);
+    }, 1000);
+
+    recordBtn.classList.add('recording');
+    recordBtn.innerHTML = '<span class="dot"></span> Arrêter l\'enregistrement';
+    recordStatus.textContent = speechRecognizer
+      ? 'Enregistrement en cours — récite distinctement, près du micro.'
+      : "Enregistrement en cours (reconnaissance vocale indisponible sur ce navigateur : seul l'audio sera enregistré).";
+  }
+
+  function stopRecording(){
+    if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    if(speechRecognizer){ try{ speechRecognizer.stop(); }catch(err){} }
+    clearInterval(recordTimerInterval);
+    recordBtn.classList.remove('recording');
+    recordBtn.innerHTML = '<span class="dot"></span> Démarrer l\'enregistrement';
+    recordStatus.textContent = 'Analyse du verset récité…';
+    // laisse le temps au reconnaisseur vocal de livrer son dernier résultat "final"
+    setTimeout(() => {
+      runDetection();
+      recordStatus.textContent = 'Enregistrement terminé — écoute-toi ci-contre.';
+    }, 600);
+  }
+
   recordBtn?.addEventListener('click', () => {
-    const recording = recordBtn.classList.toggle('recording');
-    recordBtn.innerHTML = recording
-      ? '<span class="dot"></span> Enregistrement en cours…'
-      : '<span class="dot"></span> Démarrer l\'enregistrement';
+    if(recordBtn.classList.contains('recording')) stopRecording();
+    else startRecording();
+  });
+  document.getElementById('recordAgainBtn')?.addEventListener('click', () => {
+    recordPlayer.classList.remove('visible');
+    detectionResult.innerHTML = `<p style="opacity:.7;font-size:0.85rem;">Lance un enregistrement pour voir le résultat ici.</p>`;
+    transcriptCompare.classList.remove('visible');
+    recordStatus.textContent = 'Appuie pour démarrer — ton navigateur va demander l\'accès au micro.';
   });
 
   // ----- Modal connexion : ouverture / fermeture -----
@@ -1961,4 +2200,4 @@
   });
 </script>
 </body>
-</html> 
+</html>
