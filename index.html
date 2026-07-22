@@ -8,6 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Work+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- Librairie Supabase (elle n'était jamais chargée avant, donc supabase.createClient n'existait pas) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- adhan.js : calcul des horaires de prière et de la Qibla directement dans le navigateur -->
+<script src="https://unpkg.com/adhan/lib/bundles/adhan.umd.min.js"></script>
 <style>
   :root{
     --emerald-950:#0b2e2b;
@@ -476,6 +478,15 @@
   .prayer-item .p-name{font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; opacity:0.85;}
   .prayer-item .p-time{font-family:'IBM Plex Mono', monospace; font-size:0.98rem; margin-top:4px; font-weight:600;}
 
+  .azan-control{margin-top:18px; padding-top:16px; border-top:1px solid rgba(247,243,232,0.15);}
+  .azan-toggle{display:flex; align-items:center; gap:10px; font-size:0.86rem; cursor:pointer; margin-bottom:10px;}
+  .azan-toggle input{width:17px; height:17px; accent-color:var(--gold-500);}
+  .azan-test{
+    background:rgba(247,243,232,0.1); border:1px solid rgba(247,243,232,0.25); color:var(--sand);
+    border-radius:999px; padding:6px 14px; font-size:0.78rem; margin-bottom:8px;
+  }
+  .azan-note{font-size:0.74rem; opacity:0.65; margin:0;}
+
   .qibla-card{
     background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:26px;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center;
@@ -857,7 +868,6 @@
       <span class="eyebrow">Horaires &amp; Qibla</span>
       <h2>Les cinq prières, où que tu sois.</h2>
       <p>"La Salât demeure, pour les croyants, une prescription à des temps déterminés". (Qur'an 04:113)</p>
-
     </div>
     <div class="prayer-shell">
       <div class="prayer-times-card">
@@ -881,6 +891,15 @@
           <div class="prayer-item"><div class="p-name">Asr</div><div class="p-time">--:--</div></div>
           <div class="prayer-item"><div class="p-name">Maghrib</div><div class="p-time">--:--</div></div>
           <div class="prayer-item"><div class="p-name">Isha</div><div class="p-time">--:--</div></div>
+        </div>
+        <div class="azan-control">
+          <label class="azan-toggle">
+            <input type="checkbox" id="azanToggle">
+            <span>🔊 Jouer l'appel à la prière (Azan) automatiquement</span>
+          </label>
+          <button type="button" id="azanTestBtn" class="azan-test">Tester le son</button>
+          <p class="azan-note">Ne fonctionne que si cet onglet reste ouvert dans ton navigateur.</p>
+          <audio id="azanAudio" preload="none" src="https://cdn.aladhan.com/audio/adhans/a9.mp3"></audio>
         </div>
       </div>
       <div class="qibla-card">
@@ -2035,50 +2054,16 @@
     prayerList.innerHTML = PRAYER_ORDER.map(name => `
       <div class="prayer-item" data-name="${name}">
         <div class="p-name">${name}</div>
-        <div class="p-time">${(times[name] || '--:--').split(' ')[0]}</div>
+        <div class="p-time">${times[name] || '--:--'}</div>
       </div>
     `).join('');
   }
 
-  // Calcule le décalage UTC (en minutes) d'un fuseau horaire IANA à un instant donné.
-  function getTzOffsetMinutes(timeZone, date){
-    try{
-      const parts = new Intl.DateTimeFormat('en-US', {
-        timeZone, timeZoneName: 'shortOffset'
-      }).formatToParts(date);
-      const tzPart = parts.find(p => p.type === 'timeZoneName').value; // ex: "GMT+2" ou "GMT+5:30"
-      const m = tzPart.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
-      if(!m) return 0;
-      const sign = m[1] === '-' ? -1 : 1;
-      const hours = parseInt(m[2], 10);
-      const mins = m[3] ? parseInt(m[3], 10) : 0;
-      return sign * (hours * 60 + mins);
-    }catch(err){
-      return -date.getTimezoneOffset(); // repli : fuseau du navigateur
-    }
-  }
-
-  // Donne l'année/mois/jour "du jour" tels que vécus dans le fuseau horaire donné.
-  function getYMDInTz(timeZone, date){
-    const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(date);
-    const get = t => parts.find(p => p.type === t).value;
-    return { year: Number(get('year')), month: Number(get('month')), day: Number(get('day')) };
-  }
-
-  function startCountdown(times, timeZone){
-    prayerTimesToday = {};
-    const now = new Date();
-    const offsetMin = timeZone ? getTzOffsetMinutes(timeZone, now) : -now.getTimezoneOffset();
-    const { year, month, day } = timeZone ? getYMDInTz(timeZone, now) : { year: now.getFullYear(), month: now.getMonth()+1, day: now.getDate() };
-
-    PRAYER_ORDER.forEach(name => {
-      const raw = (times[name] || '').split(' ')[0]; // "HH:mm"
-      const [h, m] = raw.split(':').map(Number);
-      // Construit l'instant UTC correspondant à h:m dans le fuseau du lieu, le jour local du lieu.
-      const utcMillis = Date.UTC(year, month - 1, day, h, m, 0) - offsetMin * 60000;
-      prayerTimesToday[name] = new Date(utcMillis);
-    });
-
+  function startCountdown(prayerDates){
+    // prayerDates : { Fajr: Date, Dhuhr: Date, Asr: Date, Maghrib: Date, Isha: Date }
+    // Ce sont déjà des instants UTC exacts calculés par adhan.js — plus besoin de deviner
+    // le fuseau horaire ou de reconstruire des dates à partir de chaînes "HH:mm".
+    prayerTimesToday = prayerDates;
     if(countdownTimer) clearInterval(countdownTimer);
     function tick(){
       const now = new Date();
@@ -2087,7 +2072,6 @@
       if(next){
         nextTime = prayerTimesToday[next];
       } else {
-        // toutes les prières du jour sont passées : on vise Fajr, 24h après le Fajr du jour (approximatif)
         next = 'Fajr';
         nextTime = new Date(prayerTimesToday['Fajr'].getTime() + 24 * 3600000);
       }
@@ -2100,9 +2084,58 @@
       document.querySelectorAll('.prayer-item').forEach(el => {
         el.classList.toggle('active', el.dataset.name === next);
       });
+      checkAzanTriggers(now);
     }
     tick();
     countdownTimer = setInterval(tick, 1000);
+  }
+
+  /* =====================================================================
+     AZAN — joue l'appel à la prière quand l'heure arrive, si l'utilisateur
+     l'a activé. Ne fonctionne que pendant que l'onglet reste ouvert (aucune
+     notification push n'est possible depuis une simple page web sans backend).
+  ===================================================================== */
+  const azanToggle = document.getElementById('azanToggle');
+  const azanAudio = document.getElementById('azanAudio');
+  const azanTestBtn = document.getElementById('azanTestBtn');
+
+  // Charge la préférence sauvegardée
+  try{ azanToggle.checked = localStorage.getItem('rihla_azan_enabled') === 'true'; }catch(err){}
+
+  azanToggle?.addEventListener('change', () => {
+    try{ localStorage.setItem('rihla_azan_enabled', azanToggle.checked ? 'true' : 'false'); }catch(err){}
+    if(azanToggle.checked){
+      // "Débloque" la lecture audio automatique future en jouant/coupant immédiatement,
+      // pendant qu'on est encore dans le geste de clic de l'utilisateur (exigé par les navigateurs).
+      azanAudio.play().then(() => { azanAudio.pause(); azanAudio.currentTime = 0; }).catch(() => {});
+    }
+  });
+
+  azanTestBtn?.addEventListener('click', () => {
+    azanAudio.currentTime = 0;
+    azanAudio.play().catch(() => {
+      azanTestBtn.textContent = "Impossible de jouer le son — vérifie le volume de ton appareil.";
+    });
+  });
+
+  function checkAzanTriggers(now){
+    if(!azanToggle || !azanToggle.checked) return;
+    const todayKey = now.toISOString().slice(0, 10);
+    PRAYER_ORDER.forEach(name => {
+      const t = prayerTimesToday[name];
+      if(!t) return;
+      const diff = now - t; // positif une fois l'heure passée
+      if(diff >= 0 && diff < 2000){ // fenêtre de 2s pour ne déclencher qu'une fois
+        const storageKey = `rihla_azan_played_${todayKey}_${name}`;
+        let alreadyPlayed = false;
+        try{ alreadyPlayed = sessionStorage.getItem(storageKey) === 'true'; }catch(err){}
+        if(!alreadyPlayed){
+          azanAudio.currentTime = 0;
+          azanAudio.play().catch(() => {});
+          try{ sessionStorage.setItem(storageKey, 'true'); }catch(err){}
+        }
+      }
+    });
   }
 
   function renderQibla(direction){
@@ -2122,26 +2155,31 @@
     }
   }
 
-  async function initPrayerTimes(lat, lng, isDefault){
+  // Calcule les horaires + la Qibla directement dans le navigateur avec adhan.js
+  // (aucune requête réseau nécessaire pour ce calcul — plus fiable qu'une API externe).
+  function initPrayerTimes(lat, lng, isDefault, timeZone){
     prayerPlace.textContent = isDefault ? 'Position par défaut : La Mecque (autorise la localisation pour tes horaires locaux)' : 'Localisation en cours…';
     try{
-      const ts = Math.floor(Date.now() / 1000);
-      const res = await fetch(`https://api.aladhan.com/v1/timings/${ts}?latitude=${lat}&longitude=${lng}&method=3`);
-      const json = await res.json();
-      const times = json.data.timings;
-      const timeZone = json.data.meta && json.data.meta.timezone; // ex: "Africa/Cairo" — le fuseau réel du lieu détecté
-      renderPrayerList(times);
-      startCountdown(times, timeZone);
+      if(typeof adhan === 'undefined') throw new Error('adhan.js indisponible');
+      const tz = timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const coordinates = new adhan.Coordinates(lat, lng);
+      const params = adhan.CalculationMethod.MuslimWorldLeague();
+      const date = new Date();
+      const pt = new adhan.PrayerTimes(coordinates, date, params);
 
-      const qres = await fetch(`https://api.aladhan.com/v1/qibla/${lat}/${lng}`);
-      const qjson = await qres.json();
-      renderQibla(qjson.data.direction);
+      const fmt = (d) => d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: tz });
+      const times = { Fajr: fmt(pt.fajr), Dhuhr: fmt(pt.dhuhr), Asr: fmt(pt.asr), Maghrib: fmt(pt.maghrib), Isha: fmt(pt.isha) };
+      renderPrayerList(times);
+      startCountdown({ Fajr: pt.fajr, Dhuhr: pt.dhuhr, Asr: pt.asr, Maghrib: pt.maghrib, Isha: pt.isha });
+
+      const direction = adhan.Qibla(coordinates);
+      renderQibla(direction);
 
       if(!isDefault){
-        prayerPlace.textContent = await reverseGeocodeLabel(lat, lng);
+        reverseGeocodeLabel(lat, lng).then(label => { prayerPlace.textContent = label; });
       }
     }catch(err){
-      prayerPlace.textContent = "Horaires indisponibles pour le moment.";
+      prayerPlace.textContent = "Horaires indisponibles pour le moment (bibliothèque de calcul non chargée).";
     }
   }
 
@@ -2153,6 +2191,8 @@
     }
     prayerPlace.textContent = 'Localisation en cours…';
     navigator.geolocation.getCurrentPosition(
+      // Géolocalisation GPS/réseau : on part du principe que le fuseau horaire de l'appareil
+      // correspond à la position physique détectée (vrai dans l'immense majorité des cas).
       pos => initPrayerTimes(pos.coords.latitude, pos.coords.longitude, false),
       err => {
         let msg = "Position indisponible — horaires de La Mecque affichés par défaut.";
@@ -2186,7 +2226,9 @@
         return;
       }
       citySearchStatus.textContent = '';
-      await initPrayerTimes(result.latitude, result.longitude, false);
+      // Open-Meteo renvoie directement le fuseau horaire IANA de la ville trouvée —
+      // fiable même si elle est dans un fuseau différent de celui de l'appareil.
+      initPrayerTimes(result.latitude, result.longitude, false, result.timezone);
       prayerPlace.textContent = [result.name, result.country].filter(Boolean).join(', ');
     }catch(err){
       citySearchStatus.textContent = "Recherche impossible pour le moment — réessaie.";
