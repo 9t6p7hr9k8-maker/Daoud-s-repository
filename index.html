@@ -2097,10 +2097,14 @@
      l'a activé. Ne fonctionne que pendant que l'onglet reste ouvert (aucune
      notification push n'est possible depuis une simple page web sans backend).
   ===================================================================== */
-  const azanToggle = document.getElementById('azanToggle');
-  const azanAudio = document.getElementById('azanAudio');
-  const azanTestBtn = document.getElementById('azanTestBtn');
+  
+const azanTestBtn = document.getElementById("azanTestBtn");
+const adhanAudio = document.getElementById("adhanAudio");
 
+azanTestBtn.addEventListener("click", () => {
+    adhanAudio.currentTime = 0;
+    adhanAudio.play();
+});
   // Charge la préférence sauvegardée
   try{ azanToggle.checked = localStorage.getItem('rihla_azan_enabled') === 'true'; }catch(err){}
 
