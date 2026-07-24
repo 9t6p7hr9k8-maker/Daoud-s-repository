@@ -257,7 +257,7 @@
     width:40px; height:40px; border-radius:50%;
     background:var(--gold-500); border:none; display:flex; align-items:center; justify-content:center;
   }
-  .play-btn svg{width:16px;height:16px;fill:var(--emerald-950);}
+  .play-btn svg{width:16px;height:16px; fill:var(--emerald-950);}
   .progress-track{flex:1; height:4px; background:rgba(247,243,232,0.2); border-radius:999px; overflow:hidden;}
   .progress-fill{height:100%; width:0%; background:var(--gold-500); transition:width .3s linear;}
   .timer{font-family:'IBM Plex Mono', monospace; font-size:0.78rem; opacity:0.8;}
@@ -656,6 +656,90 @@
     .prayer-info-grid{grid-template-columns:repeat(2,1fr);}
     .how-it-works{grid-template-columns:1fr;}
   }
+
+  /* ============ LECTURE COMPLÈTE — Coran en tajwîd + appui long ============ */
+  .reader-toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+  .reader-toolbar select{ padding:10px 14px; border-radius:10px; border:1px solid var(--line); font-family:inherit; font-size:0.9rem; background:#fff; flex:1; min-width:200px; }
+  .reader-toolbar-actions{ display:flex; gap:8px; }
+  .reader-toolbar-actions button{ background:none; border:1px solid var(--line); border-radius:999px; padding:9px 16px; font-size:0.85rem; color:var(--emerald-950); }
+  .reader-toolbar-actions button:hover{ border-color:var(--emerald-950); }
+  .reader-hint{ font-size:0.82rem; color:var(--ink-soft); margin:0 0 6px; }
+  .reader-caveat{ font-size:0.76rem; color:var(--ink-soft); opacity:0.85; margin:0 0 18px; }
+
+  .tajweed-legend{ margin-bottom:20px; }
+  .tajweed-legend summary{ cursor:pointer; font-size:0.85rem; color:var(--emerald-600); font-weight:500; }
+  .tajweed-legend-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; margin-top:12px; }
+  .tajweed-legend-item{ display:flex; align-items:center; gap:8px; font-size:0.78rem; color:var(--ink-soft); }
+  .tajweed-legend-dot{ width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+
+  .mushaf-page{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+    padding:40px 34px; margin-bottom:18px;
+    font-family:'Amiri', serif; font-size:1.9rem; line-height:2.7;
+    text-align:justify; text-align-last:right;
+  }
+  .mushaf-ayah{
+    cursor:pointer; border-radius:6px; padding:1px 2px;
+    transition:background .35s ease;
+  }
+  .mushaf-ayah.holding{ background:rgba(201,162,39,0.28); }
+  .mushaf-page .end{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:1.5rem; height:1.5rem; border-radius:50%;
+    background:var(--sand); color:var(--emerald-800);
+    font-family:'IBM Plex Mono', monospace; font-size:0.55em;
+    margin:0 5px; vertical-align:middle;
+  }
+  /* Couleurs officielles du tajwîd (Al Quran Cloud) */
+  .mushaf-page .ham_wasl,
+  .mushaf-page .silent,
+  .mushaf-page .laam_shamsiyah{ color:#AAAAAA; }
+  .mushaf-page .madda_normal{ color:#537FFF; }
+  .mushaf-page .madda_permissible{ color:#4050FF; }
+  .mushaf-page .madda_necessary{ color:#000EBC; }
+  .mushaf-page .qalaqah{ color:#DD0008; }
+  .mushaf-page .madda_obligatory{ color:#2144C1; }
+  .mushaf-page .ikhafa_shafawi{ color:#D500B7; }
+  .mushaf-page .ikhafa{ color:#9400A8; }
+  .mushaf-page .idgham_shafawi{ color:#58B800; }
+  .mushaf-page .iqlab{ color:#26BFFD; }
+  .mushaf-page .idgham_ghunnah{ color:#169777; }
+  .mushaf-page .idgham_wo_ghunnah{ color:#169200; }
+  .mushaf-page .idgham_mutajanisayn,
+  .mushaf-page .idgham_mutaqaribayn{ color:#A1A1A1; }
+  .mushaf-page .ghunnah{ color:#FF7E1E; }
+
+  .reader-pager{ display:flex; justify-content:space-between; align-items:center; }
+  .reader-pager button{
+    background:var(--emerald-950); color:var(--parchment); border:none; border-radius:999px; padding:10px 20px; font-size:0.88rem;
+  }
+  .reader-pager button:disabled{ opacity:0.4; }
+  .reader-pager span{ font-family:'IBM Plex Mono', monospace; font-size:0.82rem; color:var(--ink-soft); }
+
+  .verse-popup-overlay{
+    position:fixed; inset:0; background:rgba(11,46,43,0.55);
+    display:none; align-items:center; justify-content:center; z-index:300; padding:20px;
+  }
+  .verse-popup-overlay.open{ display:flex; }
+  .verse-popup{
+    background:var(--parchment); border-radius:var(--radius); padding:32px;
+    width:100%; max-width:480px; max-height:82vh; overflow-y:auto; position:relative;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.4);
+  }
+  .verse-popup-close{
+    position:absolute; top:14px; right:14px; background:none; border:none;
+    width:30px; height:30px; border-radius:50%; font-size:1rem; color:var(--ink-soft);
+  }
+  .verse-popup-close:hover{ background:var(--sand); }
+  .verse-popup .fc-arabic{ margin:14px 0; }
+  .vp-section{ margin-bottom:14px; }
+  .vp-asbab{ margin-top:18px; padding-top:16px; border-top:1px solid var(--line); }
+  .vp-asbab h5{ margin:0 0 8px; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--emerald-600); }
+  .vp-asbab p{ margin:0; font-size:0.9rem; color:var(--ink-soft); line-height:1.6; }
+
+  @media (max-width:900px){
+    .mushaf-page{ font-size:1.5rem; padding:26px 18px; line-height:2.3; }
+  }
 </style>
 <body>
 
@@ -680,6 +764,7 @@
       <button class="nav-link" data-view="view-rappel">Rappel du jour</button>
       <button class="nav-link" data-view="view-reciters">Récitateurs</button>
       <button class="nav-link" data-view="view-coran">Le Coran</button>
+      <button class="nav-link" data-view="view-lecture-complete">Lecture continue</button>
       <button class="nav-link" data-view="view-home" data-scroll-to="tarifs">Tarifs</button>
     </nav>
     <div class="nav-actions">
@@ -717,8 +802,8 @@
           <line class="girih-line two" x1="292" y1="145" x2="108" y2="255"/>
         </svg>
         <div class="girih-caption">
-          <span>JOUR 47</span>
-          <span>SOURATE AL-KAHF · V. 12</span>
+          <span id="heroDayNumber">JOUR 1</span>
+          <span id="heroVersetInfo">Chargement…</span>
         </div>
       </div>
     </div>
@@ -762,6 +847,13 @@
         <span class="tag">Lecture</span>
         <h3>Le Coran en fiches</h3>
         <p>Chaque verset en arabe, avec traduction française et anglaise, sous forme de fiches mémo.</p>
+        <span class="expand-hint">Découvrir →</span>
+      </button>
+      <button class="overview-card" data-view="view-lecture-complete">
+        <div class="product-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <span class="tag">Lecture continue</span>
+        <h3>Le Coran tout entier</h3>
+        <p>Texte en tajwîd couleur, page après page, avec traductions et causes de révélation à l'appui long.</p>
         <span class="expand-hint">Découvrir →</span>
       </button>
       <button class="overview-card" data-view="view-suivi">
@@ -1125,7 +1217,74 @@
       </div>
     </section>
   </div>
+  <div class="view" id="view-lecture-complete">
+    <button class="back-link" data-view="view-home">← Retour à l'accueil</button>
+    <section class="reveal">
+      <div class="section-head">
+        <span class="eyebrow">Lecture continue</span>
+        <h2>Le Coran, page après page.</h2>
+        <p>Texte en tajwîd couleur, défilement page par page. Reste appuyé sur un verset pour voir sa traduction et, si elle est connue, sa cause de révélation.</p>
+      </div>
 
+      <div class="reader-toolbar">
+        <select id="lcSurahSelect" aria-label="Choisir une sourate"></select>
+        <div class="reader-toolbar-actions">
+          <button id="lcPrevSurah" type="button">← Sourate</button>
+          <button id="lcNextSurah" type="button">Sourate →</button>
+        </div>
+      </div>
+      <p class="reader-hint">Astuce : reste appuyé (souris ou doigt) sur un verset pour afficher sa traduction FR/EN et son asbab al-nuzul.</p>
+      <p class="reader-caveat">Le tajwîd colorié aide à repérer les règles de récitation ; il ne remplace pas l'écoute d'un récitateur qualifié pour apprendre la prononciation exacte.</p>
+
+      <details class="tajweed-legend">
+        <summary>Légende des couleurs du tajwîd</summary>
+        <div class="tajweed-legend-grid">
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#AAAAAA;"></span>Lettre muette / Lâm solaire</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#537FFF;"></span>Madd normal (2 temps)</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#4050FF;"></span>Madd permissible (2-4-6 temps)</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#000EBC;"></span>Madd nécessaire (6 temps)</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#2144C1;"></span>Madd obligatoire (4-5 temps)</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#DD0008;"></span>Qalqala (rebond)</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#9400A8;"></span>Ikhfâ'</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#D500B7;"></span>Ikhfâ' shafawî (avec mîm)</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#26BFFD;"></span>Iqlâb</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#58B800;"></span>Idghâm shafawî (avec mîm)</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#169777;"></span>Idghâm avec ghunna</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#169200;"></span>Idghâm sans ghunna</div>
+          <div class="tajweed-legend-item"><span class="tajweed-legend-dot" style="background:#FF7E1E;"></span>Ghunna (résonance nasale)</div>
+        </div>
+      </details>
+
+      <p class="quran-status" id="lcStatus">Chargement…</p>
+      <div class="mushaf-page" id="mushafPage" lang="ar" dir="rtl"></div>
+
+      <div class="reader-pager">
+        <button id="lcPrevPage" disabled>← Page précédente</button>
+        <span id="lcPageIndicator">—</span>
+        <button id="lcNextPage" disabled>Page suivante →</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="verse-popup-overlay" id="versePopupOverlay">
+    <div class="verse-popup" id="versePopup" role="dialog" aria-modal="true">
+      <button class="verse-popup-close" id="versePopupClose" aria-label="Fermer">✕</button>
+      <span class="fc-ref" id="vpRef">—</span>
+      <p class="fc-arabic" id="vpArabic" lang="ar">—</p>
+      <div class="vp-section">
+        <span class="fc-lang-tag">FR</span>
+        <p id="vpFr">—</p>
+      </div>
+      <div class="vp-section">
+        <span class="fc-lang-tag">EN</span>
+        <p id="vpEn">—</p>
+      </div>
+      <div class="vp-asbab">
+        <h5>Cause de la révélation (Asbab al-Nuzul)</h5>
+        <p id="vpAsbabText">—</p>
+      </div>
+    </div>
+  </div>
 
 </main>
 
@@ -1655,6 +1814,50 @@
      LISTE DES 114 SOURATES (Al Quran Cloud) — sert aux deux sélecteurs
   ===================================================================== */
   let SURAHS = [];
+
+  /* =====================================================================
+     JOUR & VERSET DU JOUR — encart qui change chaque jour civil.
+     "Jour 1" = première visite sur cet appareil (mémorisée en local).
+     Le verset défile automatiquement sur les 6236 versets du Coran.
+  ===================================================================== */
+  function getRihlaDayNumber(){
+    let startDateStr;
+    try{
+      startDateStr = localStorage.getItem('rihla_first_visit');
+      if(!startDateStr){
+        startDateStr = new Date().toISOString().slice(0, 10);
+        localStorage.setItem('rihla_first_visit', startDateStr);
+      }
+    }catch(err){
+      startDateStr = new Date().toISOString().slice(0, 10);
+    }
+    const start = new Date(startDateStr + 'T00:00:00');
+    const today = new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00');
+    const diffDays = Math.round((today - start) / 86400000);
+    return Math.max(1, diffDays + 1);
+  }
+
+  function updateHeroDayCaption(){
+    const dayEl = document.getElementById('heroDayNumber');
+    const verseEl = document.getElementById('heroVersetInfo');
+    if(!dayEl || !verseEl) return;
+    const dayNumber = getRihlaDayNumber();
+    dayEl.textContent = 'JOUR ' + dayNumber;
+    if(!SURAHS || !SURAHS.length){
+      verseEl.textContent = '—';
+      return;
+    }
+    const totalAyahs = SURAHS.reduce((sum, s) => sum + s.numberOfAyahs, 0);
+    let index = (dayNumber - 1) % totalAyahs;
+    for(const s of SURAHS){
+      if(index < s.numberOfAyahs){
+        verseEl.textContent = 'SOURATE ' + s.englishName.toUpperCase() + ' · V. ' + (index + 1);
+        return;
+      }
+      index -= s.numberOfAyahs;
+    }
+  }
+
   async function loadSurahList(){
     try{
       const res = await fetch('https://api.alquran.cloud/v1/surah');
@@ -1745,6 +1948,162 @@
   document.getElementById('quranLoadBtn').addEventListener('click', loadSurahFlashcards);
   fcPrev.addEventListener('click', () => { if(currentAyahIndex > 0){ currentAyahIndex--; renderFlashcard(); } });
   fcNext.addEventListener('click', () => { if(currentAyahIndex < currentAyahs.length - 1){ currentAyahIndex++; renderFlashcard(); } });
+
+  /* =====================================================================
+     LECTURE COMPLÈTE DU CORAN — texte en tajwîd (couleurs), pagination,
+     et appui long sur un verset pour voir sa traduction FR/EN + les
+     causes de la révélation (asbab al-nuzul), quand elles sont connues.
+     Texte tajwîd : Al Quran Cloud (édition "quran-tajweed"), même API
+     que le reste du site — aucune clé nécessaire.
+     Asbab al-nuzul : traduction anglaise du livre d'Al-Wahidi, via le
+     dépôt public spa5k/tafsir_api. La plupart des versets n'ont pas de
+     cause de révélation rapportée : c'est normal, pas une erreur.
+  ===================================================================== */
+  const LC_VERSES_PER_PAGE = 8;
+  let lcCurrentAyahs = [];
+  let lcCurrentPage = 0;
+
+  const mushafPage = document.getElementById('mushafPage');
+  const lcStatus = document.getElementById('lcStatus');
+  const lcSurahSelect = document.getElementById('lcSurahSelect');
+  const lcPrevPage = document.getElementById('lcPrevPage');
+  const lcNextPage = document.getElementById('lcNextPage');
+  const lcPageIndicator = document.getElementById('lcPageIndicator');
+  const lcPrevSurah = document.getElementById('lcPrevSurah');
+  const lcNextSurah = document.getElementById('lcNextSurah');
+
+  const versePopupOverlay = document.getElementById('versePopupOverlay');
+  const vpRef = document.getElementById('vpRef');
+  const vpArabic = document.getElementById('vpArabic');
+  const vpFr = document.getElementById('vpFr');
+  const vpEn = document.getElementById('vpEn');
+  const vpAsbabText = document.getElementById('vpAsbabText');
+
+  function populateLectureCompleteSelect(){
+    if(!lcSurahSelect || !SURAHS.length) return;
+    lcSurahSelect.innerHTML = SURAHS.map(s => `<option value="${s.number}">${s.number}. ${s.englishName} — ${s.name}</option>`).join('');
+  }
+
+  // Appui long (souris ou tactile) : déclenche callback() après holdMs ms,
+  // s'annule si le doigt/curseur bouge trop ou si on relâche avant.
+  function attachLongPress(el, callback, holdMs){
+    holdMs = holdMs || 480;
+    let timer = null, startX = 0, startY = 0, triggered = false;
+    const cancel = () => { if(timer) clearTimeout(timer); timer = null; el.classList.remove('holding'); };
+    el.addEventListener('pointerdown', (e) => {
+      triggered = false;
+      startX = e.clientX; startY = e.clientY;
+      el.classList.add('holding');
+      timer = setTimeout(() => { triggered = true; cancel(); callback(); }, holdMs);
+    });
+    el.addEventListener('pointermove', (e) => {
+      if(!timer) return;
+      if(Math.abs(e.clientX - startX) > 12 || Math.abs(e.clientY - startY) > 12) cancel();
+    });
+    el.addEventListener('pointerup', cancel);
+    el.addEventListener('pointercancel', cancel);
+    el.addEventListener('pointerleave', cancel);
+    el.addEventListener('contextmenu', (e) => { if(triggered) e.preventDefault(); });
+  }
+
+  async function loadLectureCompleteSurah(surahNumber, resumePage){
+    if(!lcStatus) return;
+    lcStatus.textContent = 'Chargement de la sourate…';
+    mushafPage.innerHTML = '';
+    lcPrevPage.disabled = true;
+    lcNextPage.disabled = true;
+    try{
+      const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-tajweed,quran-uthmani,fr.hamidullah,en.sahih`);
+      const json = await res.json();
+      const [tajweedEd, uthmaniEd, frEd, enEd] = json.data;
+      lcCurrentAyahs = tajweedEd.ayahs.map((a, i) => ({
+        surah: surahNumber,
+        ayahNumber: a.numberInSurah,
+        tajweedHtml: a.text,
+        plainArabic: (uthmaniEd && uthmaniEd.ayahs[i]) ? uthmaniEd.ayahs[i].text : a.text,
+        fr: (frEd && frEd.ayahs[i]) ? frEd.ayahs[i].text : '',
+        en: (enEd && enEd.ayahs[i]) ? enEd.ayahs[i].text : '',
+        surahName: tajweedEd.englishName,
+        surahArabicName: tajweedEd.name
+      }));
+      lcCurrentPage = resumePage || 0;
+      lcStatus.textContent = '';
+      renderLecturePage();
+    }catch(err){
+      lcStatus.textContent = "Cette sourate n'a pas pu être chargée — vérifie ta connexion et réessaie.";
+    }
+  }
+
+  function renderLecturePage(){
+    if(!lcCurrentAyahs.length) return;
+    const totalPages = Math.ceil(lcCurrentAyahs.length / LC_VERSES_PER_PAGE);
+    lcCurrentPage = Math.max(0, Math.min(lcCurrentPage, totalPages - 1));
+    const start = lcCurrentPage * LC_VERSES_PER_PAGE;
+    const pageAyahs = lcCurrentAyahs.slice(start, start + LC_VERSES_PER_PAGE);
+    mushafPage.innerHTML = pageAyahs.map(a =>
+      `<span class="mushaf-ayah" data-surah="${a.surah}" data-ayah="${a.ayahNumber}">${a.tajweedHtml}</span>`
+    ).join(' ');
+    mushafPage.querySelectorAll('.mushaf-ayah').forEach(el => {
+      attachLongPress(el, () => openVersePopup(Number(el.dataset.surah), Number(el.dataset.ayah)));
+    });
+    lcPageIndicator.textContent = `Page ${lcCurrentPage + 1} / ${totalPages}`;
+    lcPrevPage.disabled = lcCurrentPage === 0;
+    lcNextPage.disabled = lcCurrentPage >= totalPages - 1;
+    try{
+      localStorage.setItem('rihla_lecture_complete_progress', JSON.stringify({ surah: lcCurrentAyahs[0].surah, page: lcCurrentPage }));
+    }catch(err){ /* stockage indisponible, tant pis */ }
+  }
+
+  async function openVersePopup(surahNumber, ayahNumber){
+    const ayah = lcCurrentAyahs.find(a => a.surah === surahNumber && a.ayahNumber === ayahNumber);
+    if(!ayah) return;
+    vpRef.textContent = `${ayah.surahName} (${ayah.surahArabicName}) — verset ${ayahNumber}`;
+    vpArabic.textContent = ayah.plainArabic;
+    vpFr.textContent = ayah.fr || '—';
+    vpEn.textContent = ayah.en || '—';
+    vpAsbabText.textContent = 'Recherche en cours…';
+    versePopupOverlay.classList.add('open');
+    try{
+      const res = await fetch(`https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@main/tafsir/en-asbab-al-nuzul-by-al-wahidi/${surahNumber}/${ayahNumber}.json`);
+      if(!res.ok) throw new Error('indisponible');
+      const data = await res.json();
+      const text = (data && data.text) || (Array.isArray(data) && data[0] && data[0].text) || '';
+      vpAsbabText.textContent = (text && text.trim())
+        ? text
+        : "Aucune cause de révélation particulière n'est rapportée pour ce verset dans cette source.";
+    }catch(err){
+      vpAsbabText.textContent = "Aucune cause de révélation particulière n'est rapportée pour ce verset dans cette source.";
+    }
+  }
+
+  function closeVersePopup(){ versePopupOverlay.classList.remove('open'); }
+  document.getElementById('versePopupClose')?.addEventListener('click', closeVersePopup);
+  versePopupOverlay?.addEventListener('click', (e) => { if(e.target === versePopupOverlay) closeVersePopup(); });
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeVersePopup(); });
+
+  lcSurahSelect?.addEventListener('change', () => loadLectureCompleteSurah(Number(lcSurahSelect.value)));
+  lcPrevPage?.addEventListener('click', () => { lcCurrentPage--; renderLecturePage(); mushafPage.scrollIntoView({behavior:'smooth', block:'start'}); });
+  lcNextPage?.addEventListener('click', () => { lcCurrentPage++; renderLecturePage(); mushafPage.scrollIntoView({behavior:'smooth', block:'start'}); });
+  lcPrevSurah?.addEventListener('click', () => {
+    const n = Math.max(1, Number(lcSurahSelect.value) - 1);
+    lcSurahSelect.value = n;
+    loadLectureCompleteSurah(n);
+  });
+  lcNextSurah?.addEventListener('click', () => {
+    const n = Math.min(114, Number(lcSurahSelect.value) + 1);
+    lcSurahSelect.value = n;
+    loadLectureCompleteSurah(n);
+  });
+
+  function initLectureCompleteResume(){
+    let resumeSurah = 1, resumePage = 0;
+    try{
+      const saved = JSON.parse(localStorage.getItem('rihla_lecture_complete_progress'));
+      if(saved && saved.surah){ resumeSurah = saved.surah; resumePage = saved.page || 0; }
+    }catch(err){ /* rien de sauvegardé */ }
+    if(lcSurahSelect) lcSurahSelect.value = resumeSurah;
+    loadLectureCompleteSurah(resumeSurah, resumePage);
+  }
 
   /* =====================================================================
      RÉCITATEURS — via l'API publique mp3quran.net (audio complet par sourate)
@@ -2274,7 +2633,12 @@ azanTestBtn.addEventListener("click", () => {
     miniPlayerAudio = document.getElementById('miniPlayerAudio');
     miniPlayerName = document.getElementById('miniPlayerName');
 
-    loadSurahList().then(initQuranResumeBanner);
+    loadSurahList().then(() => {
+      initQuranResumeBanner();
+      updateHeroDayCaption();
+      populateLectureCompleteSelect();
+      initLectureCompleteResume();
+    });
     loadReciters();
     loadDailyHadith(false);
     locateAndInitPrayers();
